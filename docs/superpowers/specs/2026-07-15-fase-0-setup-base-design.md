@@ -103,7 +103,7 @@ fitNeSs-app/
 
 ## 4. PWA, deployment y setup de cuentas
 
-**PWA**: `public/manifest.json` + ícono placeholder (192x192, 512x512, maskable) + meta tags en el root layout para que sea instalable (Add to Home Screen). Se usa `@ducanh2912/next-pwa` (fork mantenido de next-pwa, compatible con App Router) para el service worker — cache básico de assets estáticos, sin estrategias de offline complejas.
+**PWA**: `public/manifest.json` + ícono placeholder (192x192, 512x512, maskable) + meta tags en el root layout para que sea instalable (Add to Home Screen). El service worker se escribe a mano (`public/sw.js`, registrado desde un client component) con cache básico de assets estáticos — sin librería externa. Se probó `@ducanh2912/next-pwa` y rompe el build bajo Next.js 16 (Turbopack es el bundler por defecto y ese paquete inyecta config de webpack); además está sin mantenimiento desde 2024. Un service worker mínimo de ~30 líneas cubre el criterio de instalabilidad sin esa dependencia.
 
 **Supabase** — requiere pasos manuales del usuario (no se puede crear el proyecto vía CLI/API sin login en el dashboard):
 1. El usuario crea el proyecto en supabase.com/dashboard (nombre, región, contraseña de DB).
