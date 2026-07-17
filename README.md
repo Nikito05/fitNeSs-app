@@ -39,7 +39,7 @@ PWA personal de fitness: rutina de gimnasio, progreso corporal, macros/calorías
 
 ## Navegación
 
-Bottom nav con 6 secciones: Inicio, Rutina, Progreso, Macros, Sueño, Perfil. Solo Rutina y Perfil tienen funcionalidad real en esta fase — el resto son placeholders para los módulos siguientes.
+Bottom nav con 6 secciones: Inicio, Rutina, Progreso, Macros, Sueño, Perfil. Solo Perfil tiene funcionalidad real en esta fase — el resto son placeholders para el Módulo 1 (Rutina) y los módulos siguientes.
 
 ## Deployment
 
