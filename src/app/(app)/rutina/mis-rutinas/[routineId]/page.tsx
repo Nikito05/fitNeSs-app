@@ -28,6 +28,7 @@ export default function EditarRutinaPage() {
   const [dayDetail, setDayDetail] = useState<RoutineDayDetail | null>(null)
   const [newDayName, setNewDayName] = useState('')
   const [showPickerForDay, setShowPickerForDay] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -35,12 +36,15 @@ export default function EditarRutinaPage() {
   }, [routineId])
 
   async function loadRoutine() {
+    setIsLoading(true)
     try {
       const data = await getRoutineWithDays(routineId)
       setRoutine(data.routine)
       setDays(data.days)
     } catch {
       setError('No pudimos cargar la rutina.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -113,10 +117,18 @@ export default function EditarRutinaPage() {
     }
   }
 
-  if (!routine) {
+  if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
         <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    )
+  }
+
+  if (!routine) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-4">
+        <p className="text-sm text-red-600">{error}</p>
       </div>
     )
   }

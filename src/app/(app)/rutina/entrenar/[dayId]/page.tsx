@@ -27,10 +27,12 @@ export default function EntrenarPage() {
   const [dayDetail, setDayDetail] = useState<RoutineDayDetail | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [logs, setLogs] = useState<Record<string, SetLogState>>({})
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function init() {
+      setIsLoading(true)
       try {
         const detail = await getRoutineDayDetail(dayId)
         const session = await getOrCreateWorkoutSession(dayId)
@@ -65,6 +67,8 @@ export default function EntrenarPage() {
         setLogs(initialLogs)
       } catch {
         setError('No pudimos cargar el entrenamiento de hoy.')
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -104,10 +108,18 @@ export default function EntrenarPage() {
     }
   }
 
-  if (!dayDetail) {
+  if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
         <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    )
+  }
+
+  if (!dayDetail) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-4">
+        <p className="text-sm text-red-600">{error}</p>
       </div>
     )
   }
