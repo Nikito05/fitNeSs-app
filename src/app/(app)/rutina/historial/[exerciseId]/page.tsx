@@ -22,20 +22,20 @@ export default function HistorialEjercicioPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    async function loadSessions() {
+      setIsLoading(true)
+      try {
+        const data = await listSessionsForExercise(exerciseId)
+        setSessions(data)
+      } catch {
+        setError('No pudimos cargar el historial.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     loadSessions()
   }, [exerciseId])
-
-  async function loadSessions() {
-    setIsLoading(true)
-    try {
-      const data = await listSessionsForExercise(exerciseId)
-      setSessions(data)
-    } catch {
-      setError('No pudimos cargar el historial.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   if (isLoading) {
     return (

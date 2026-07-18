@@ -15,22 +15,22 @@ export default function RutinaPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    async function loadActiveRoutine() {
+      setIsLoading(true)
+      try {
+        const active = await getActiveRoutine()
+        setRoutine(active)
+        if (active) {
+          const data = await getRoutineWithDays(active.id)
+          setDays(data.days)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     loadActiveRoutine()
   }, [])
-
-  async function loadActiveRoutine() {
-    setIsLoading(true)
-    try {
-      const active = await getActiveRoutine()
-      setRoutine(active)
-      if (active) {
-        const data = await getRoutineWithDays(active.id)
-        setDays(data.days)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   if (isLoading) {
     return (

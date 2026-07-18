@@ -19,20 +19,20 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    async function loadExercises() {
+      setIsLoading(true)
+      try {
+        const data = await listExercises()
+        setExercises(data)
+      } catch {
+        setError('No pudimos cargar el catálogo de ejercicios.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     loadExercises()
   }, [])
-
-  async function loadExercises() {
-    setIsLoading(true)
-    try {
-      const data = await listExercises()
-      setExercises(data)
-    } catch {
-      setError('No pudimos cargar el catálogo de ejercicios.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   async function handleCreate() {
     if (!newName || !newMuscleGroup || !newEquipment) {

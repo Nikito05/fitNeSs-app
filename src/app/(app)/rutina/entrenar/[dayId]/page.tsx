@@ -30,46 +30,46 @@ export default function EntrenarPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    async function init() {
+      try {
+        const detail = await getRoutineDayDetail(dayId)
+        const session = await getOrCreateWorkoutSession(dayId)
+        const existingLogs = await getLoggedSetsForSession(session.id)
+        setDayDetail(detail)
+        setSessionId(session.id)
+
+        const existingByKey = new Map(
+          existingLogs.map((log) => [`${log.exerciseId}-${log.setNumber}`, log])
+        )
+
+        const initialLogs: Record<string, SetLogState> = {}
+        for (const exercise of detail.exercises) {
+          for (const set of exercise.plannedSets) {
+            const key = `${exercise.exerciseId}-${set.setNumber}`
+            const existing = existingByKey.get(key)
+            initialLogs[key] = existing
+              ? {
+                  actualReps: existing.actualReps,
+                  actualWeight: existing.actualWeight,
+                  isSaved: true,
+                  isSaving: false,
+                }
+              : {
+                  actualReps: set.targetReps,
+                  actualWeight: set.targetWeight,
+                  isSaved: false,
+                  isSaving: false,
+                }
+          }
+        }
+        setLogs(initialLogs)
+      } catch {
+        setError('No pudimos cargar el entrenamiento de hoy.')
+      }
+    }
+
     init()
   }, [dayId])
-
-  async function init() {
-    try {
-      const detail = await getRoutineDayDetail(dayId)
-      const session = await getOrCreateWorkoutSession(dayId)
-      const existingLogs = await getLoggedSetsForSession(session.id)
-      setDayDetail(detail)
-      setSessionId(session.id)
-
-      const existingByKey = new Map(
-        existingLogs.map((log) => [`${log.exerciseId}-${log.setNumber}`, log])
-      )
-
-      const initialLogs: Record<string, SetLogState> = {}
-      for (const exercise of detail.exercises) {
-        for (const set of exercise.plannedSets) {
-          const key = `${exercise.exerciseId}-${set.setNumber}`
-          const existing = existingByKey.get(key)
-          initialLogs[key] = existing
-            ? {
-                actualReps: existing.actualReps,
-                actualWeight: existing.actualWeight,
-                isSaved: true,
-                isSaving: false,
-              }
-            : {
-                actualReps: set.targetReps,
-                actualWeight: set.targetWeight,
-                isSaved: false,
-                isSaving: false,
-              }
-        }
-      }
-      setLogs(initialLogs)
-    } catch {
-      setError('No pudimos cargar el entrenamiento de hoy.')
-    }
-  }
 
   function updateLog(key: string, field: 'actualReps' | 'actualWeight', value: string) {
     setLogs((prev) => ({
