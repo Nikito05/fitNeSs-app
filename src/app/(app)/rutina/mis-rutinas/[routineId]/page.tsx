@@ -32,19 +32,21 @@ export default function EditarRutinaPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadRoutine()
+    async function initialLoad() {
+      await loadRoutine()
+      setIsLoading(false)
+    }
+
+    initialLoad()
   }, [routineId])
 
   async function loadRoutine() {
-    setIsLoading(true)
     try {
       const data = await getRoutineWithDays(routineId)
       setRoutine(data.routine)
       setDays(data.days)
     } catch {
       setError('No pudimos cargar la rutina.')
-    } finally {
-      setIsLoading(false)
     }
   }
 
