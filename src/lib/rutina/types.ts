@@ -5,7 +5,7 @@ export type Exercise = {
   userId: string | null
   name: string
   muscleGroup: string
-  equipment: string
+  equipment: Equipment
 }
 
 export type Routine = {
