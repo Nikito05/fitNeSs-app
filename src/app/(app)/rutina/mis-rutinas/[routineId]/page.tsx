@@ -27,7 +27,7 @@ export default function EditarRutinaPage() {
   const [days, setDays] = useState<RoutineDay[]>([])
   const [openDayId, setOpenDayId] = useState<string | null>(null)
   const [dayDetail, setDayDetail] = useState<RoutineDayDetail | null>(null)
-  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null)
+  const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(new Set())
   const [newDayName, setNewDayName] = useState('')
   const [showPicker, setShowPicker] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -63,7 +63,7 @@ export default function EditarRutinaPage() {
 
   async function handleOpenDay(dayId: string) {
     setOpenDayId(dayId)
-    setExpandedExerciseId(null)
+    setExpandedExerciseIds(new Set())
     setShowPicker(false)
     await loadDayDetail(dayId)
   }
@@ -72,7 +72,7 @@ export default function EditarRutinaPage() {
     if (!open) {
       setOpenDayId(null)
       setDayDetail(null)
-      setExpandedExerciseId(null)
+      setExpandedExerciseIds(new Set())
       setShowPicker(false)
     }
   }
@@ -127,6 +127,18 @@ export default function EditarRutinaPage() {
     } catch {
       setError('No pudimos quitar el ejercicio.')
     }
+  }
+
+  function toggleExercise(exerciseId: string) {
+    setExpandedExerciseIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId)
+      } else {
+        next.add(exerciseId)
+      }
+      return next
+    })
   }
 
   if (isLoading) {
@@ -199,47 +211,48 @@ export default function EditarRutinaPage() {
               </Button>
             </div>
 
-            {dayDetail?.exercises.map((exercise) => (
-              <div key={exercise.id} className="rounded-md border">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedExerciseId((prev) => (prev === exercise.id ? null : exercise.id))
-                  }
-                  className="flex w-full items-center justify-between p-3 text-left"
-                >
-                  <span className="text-sm font-medium">{exercise.exerciseName}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {exercise.plannedSets.length} series
-                  </span>
-                </button>
-                {expandedExerciseId === exercise.id && (
-                  <div className="border-t p-3">
-                    <PlannedSetsEditor
-                      routineDayExerciseId={exercise.id}
-                      initialSets={exercise.plannedSets}
-                      onSaved={() => openDayId && loadDayDetail(openDayId)}
-                    />
-                    <div className="mt-2 flex items-center justify-between">
-                      <Link
-                        href={`/rutina/historial/${exercise.exerciseId}`}
-                        className="text-xs underline"
-                      >
-                        Ver historial
-                      </Link>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveExercise(exercise.id)}
-                      >
-                        Quitar ejercicio
-                      </Button>
+            {dayDetail?.exercises.map((exercise) => {
+              const isExpanded = expandedExerciseIds.has(exercise.id)
+              return (
+                <div key={exercise.id} className="rounded-md border">
+                  <button
+                    type="button"
+                    onClick={() => toggleExercise(exercise.id)}
+                    className="flex w-full items-center justify-between p-3 text-left"
+                  >
+                    <span className="text-sm font-medium">{exercise.exerciseName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {exercise.plannedSets.length} series {isExpanded ? '▾' : '▸'}
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t p-3">
+                      <PlannedSetsEditor
+                        routineDayExerciseId={exercise.id}
+                        initialSets={exercise.plannedSets}
+                        onSaved={() => openDayId && loadDayDetail(openDayId)}
+                      />
+                      <div className="mt-2 flex items-center justify-between">
+                        <Link
+                          href={`/rutina/historial/${exercise.exerciseId}`}
+                          className="text-xs underline"
+                        >
+                          Ver historial
+                        </Link>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveExercise(exercise.id)}
+                        >
+                          Quitar ejercicio
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              )
+            })}
 
             {showPicker ? (
               <ExercisePicker onSelect={(exercise) => handleAddExercise(exercise.id)} />
