@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { listRoutines, createRoutine, setActiveRoutine } from '@/lib/rutina/routines-api'
 import type { Routine } from '@/lib/rutina/types'
 
 export default function MisRutinasPage() {
+  const router = useRouter()
   const [routines, setRoutines] = useState<Routine[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newName, setNewName] = useState('')
@@ -80,18 +81,21 @@ export default function MisRutinasPage() {
         <div className="flex flex-col gap-3">
           {routines.map((routine) => (
             <Card key={routine.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  <Link href={`/rutina/mis-rutinas/${routine.id}`} className="underline">
-                    {routine.name}
-                  </Link>
+              <button
+                type="button"
+                onClick={() => router.push(`/rutina/mis-rutinas/${routine.id}`)}
+                className="flex w-full items-center justify-between p-4 text-left"
+              >
+                <span className="font-medium">{routine.name}</span>
+                <div className="flex items-center gap-2">
                   {routine.isActive && (
-                    <span className="text-xs font-normal text-muted-foreground">Activa</span>
+                    <span className="text-xs text-muted-foreground">Activa</span>
                   )}
-                </CardTitle>
-              </CardHeader>
+                  <span className="text-sm text-muted-foreground">›</span>
+                </div>
+              </button>
               {!routine.isActive && (
-                <CardContent>
+                <div className="border-t px-4 py-3">
                   <Button
                     type="button"
                     variant="outline"
@@ -100,7 +104,7 @@ export default function MisRutinasPage() {
                   >
                     Marcar como activa
                   </Button>
-                </CardContent>
+                </div>
               )}
             </Card>
           ))}

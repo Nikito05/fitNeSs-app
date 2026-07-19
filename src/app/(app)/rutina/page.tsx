@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { getActiveRoutine, getRoutineWithDays } from '@/lib/rutina/routines-api'
 import type { Routine, RoutineDay } from '@/lib/rutina/types'
 
@@ -62,18 +62,17 @@ export default function RutinaPage() {
       <div className="flex flex-col gap-3">
         {days.map((day) => (
           <Card key={day.id}>
-            <CardHeader>
-              <CardTitle className="text-base">{day.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => router.push(`/rutina/entrenar/${day.id}`)}
-              >
-                Registrar entrenamiento
-              </Button>
-            </CardContent>
+            <button
+              type="button"
+              onClick={() => router.push(`/rutina/entrenar/${day.id}`)}
+              className="flex w-full items-center justify-between p-4 text-left"
+            >
+              <div>
+                <p className="font-medium">{day.name}</p>
+                <p className="text-xs text-muted-foreground">Registrar entrenamiento</p>
+              </div>
+              <span className="text-sm text-muted-foreground">›</span>
+            </button>
           </Card>
         ))}
         {days.length === 0 && (
