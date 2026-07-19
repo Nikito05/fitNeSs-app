@@ -1,16 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { getRoutineDayDetail } from '@/lib/rutina/routines-api'
 import {
   getOrCreateWorkoutSession,
   getLoggedSetsForSession,
   saveLoggedSet,
+  listSessionsForExercise,
 } from '@/lib/rutina/sessions-api'
+import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
 
 type SetLogState = {
@@ -20,13 +26,22 @@ type SetLogState = {
   isSaving: boolean
 }
 
+type LastValue = {
+  actualReps: number
+  actualWeight: number | null
+}
+
 export default function EntrenarPage() {
   const params = useParams<{ dayId: string }>()
+  const router = useRouter()
   const dayId = params.dayId
 
   const [dayDetail, setDayDetail] = useState<RoutineDayDetail | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [flatSets, setFlatSets] = useState<FlatPlannedSet[]>([])
   const [logs, setLogs] = useState<Record<string, SetLogState>>({})
+  const [lastByKey, setLastByKey] = useState<Record<string, LastValue>>({})
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,34 +52,62 @@ export default function EntrenarPage() {
         const detail = await getRoutineDayDetail(dayId)
         const session = await getOrCreateWorkoutSession(dayId)
         const existingLogs = await getLoggedSetsForSession(session.id)
-        setDayDetail(detail)
-        setSessionId(session.id)
+
+        const flat = flattenPlannedSets(detail.exercises)
 
         const existingByKey = new Map(
           existingLogs.map((log) => [`${log.exerciseId}-${log.setNumber}`, log])
         )
 
         const initialLogs: Record<string, SetLogState> = {}
-        for (const exercise of detail.exercises) {
-          for (const set of exercise.plannedSets) {
-            const key = `${exercise.exerciseId}-${set.setNumber}`
-            const existing = existingByKey.get(key)
-            initialLogs[key] = existing
-              ? {
-                  actualReps: existing.actualReps,
-                  actualWeight: existing.actualWeight,
-                  isSaved: true,
-                  isSaving: false,
-                }
-              : {
-                  actualReps: set.targetReps,
-                  actualWeight: set.targetWeight,
-                  isSaved: false,
-                  isSaving: false,
-                }
-          }
+        for (const flatSet of flat) {
+          const key = `${flatSet.exerciseId}-${flatSet.setNumber}`
+          const existing = existingByKey.get(key)
+          initialLogs[key] = existing
+            ? {
+                actualReps: existing.actualReps,
+                actualWeight: existing.actualWeight,
+                isSaved: true,
+                isSaving: false,
+              }
+            : {
+                actualReps: flatSet.targetReps,
+                actualWeight: flatSet.targetWeight,
+                isSaved: false,
+                isSaving: false,
+              }
         }
+
+        const uniqueExerciseIds = Array.from(new Set(detail.exercises.map((e) => e.exerciseId)))
+        const histories = await Promise.all(
+          uniqueExerciseIds.map((id) => listSessionsForExercise(id))
+        )
+
+        const lastValues: Record<string, LastValue> = {}
+        uniqueExerciseIds.forEach((exerciseId, i) => {
+          const pastSessions = histories[i].filter((s) => s.sessionId !== session.id)
+          const mostRecent = pastSessions[0]
+          if (mostRecent) {
+            for (const set of mostRecent.sets) {
+              lastValues[`${exerciseId}-${set.setNumber}`] = {
+                actualReps: set.actualReps,
+                actualWeight: set.actualWeight,
+              }
+            }
+          }
+        })
+
+        const isSavedByKey: Record<string, boolean> = {}
+        for (const key of Object.keys(initialLogs)) {
+          isSavedByKey[key] = initialLogs[key].isSaved
+        }
+
+        setDayDetail(detail)
+        setSessionId(session.id)
+        setFlatSets(flat)
         setLogs(initialLogs)
+        setLastByKey(lastValues)
+        setCurrentIndex(findFirstUnsavedIndex(flat, isSavedByKey))
       } catch {
         setError('No pudimos cargar el entrenamiento de hoy.')
       } finally {
@@ -75,20 +118,34 @@ export default function EntrenarPage() {
     init()
   }, [dayId])
 
-  function updateLog(key: string, field: 'actualReps' | 'actualWeight', value: string) {
+  function adjustReps(delta: number) {
+    const current = flatSets[currentIndex]
+    if (!current) return
+    const key = `${current.exerciseId}-${current.setNumber}`
+    setLogs((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], actualReps: Math.max(0, prev[key].actualReps + delta), isSaved: false },
+    }))
+  }
+
+  function adjustWeight(delta: number) {
+    const current = flatSets[currentIndex]
+    if (!current) return
+    const key = `${current.exerciseId}-${current.setNumber}`
     setLogs((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
+        actualWeight: Math.max(0, (prev[key].actualWeight ?? 0) + delta),
         isSaved: false,
-        [field]: field === 'actualReps' ? Number(value) || 0 : value === '' ? null : Number(value),
       },
     }))
   }
 
-  async function handleSaveSet(exerciseId: string, setNumber: number) {
-    if (!sessionId) return
-    const key = `${exerciseId}-${setNumber}`
+  async function handleConfirm() {
+    const current = flatSets[currentIndex]
+    if (!current || !sessionId) return
+    const key = `${current.exerciseId}-${current.setNumber}`
     const log = logs[key]
     if (!log) return
 
@@ -96,12 +153,13 @@ export default function EntrenarPage() {
     try {
       await saveLoggedSet({
         workoutSessionId: sessionId,
-        exerciseId,
-        setNumber,
+        exerciseId: current.exerciseId,
+        setNumber: current.setNumber,
         actualReps: log.actualReps,
         actualWeight: log.actualWeight,
       })
       setLogs((prev) => ({ ...prev, [key]: { ...prev[key], isSaving: false, isSaved: true } }))
+      setCurrentIndex((prev) => prev + 1)
     } catch {
       setError('No pudimos guardar esa serie.')
       setLogs((prev) => ({ ...prev, [key]: { ...prev[key], isSaving: false } }))
@@ -124,61 +182,104 @@ export default function EntrenarPage() {
     )
   }
 
-  return (
-    <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">{dayDetail.name}</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex flex-col gap-3">
-        {dayDetail.exercises.map((exercise) => (
-          <Card key={exercise.id}>
-            <CardHeader>
-              <CardTitle className="text-base">{exercise.exerciseName}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {exercise.plannedSets.map((set) => {
-                const key = `${exercise.exerciseId}-${set.setNumber}`
-                const log = logs[key]
-                if (!log) return null
-
-                return (
-                  <div key={key} className="flex items-center gap-2">
-                    <span className="w-14 text-xs text-muted-foreground">
-                      Serie {set.setNumber}
-                    </span>
-                    <Input
-                      type="number"
-                      className="w-20"
-                      value={log.actualReps}
-                      onChange={(e) => updateLog(key, 'actualReps', e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={log.actualWeight ?? ''}
-                      onChange={(e) => updateLog(key, 'actualWeight', e.target.value)}
-                      placeholder="Peso (kg)"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={log.isSaved ? 'outline' : 'default'}
-                      onClick={() => handleSaveSet(exercise.exerciseId, set.setNumber)}
-                      disabled={log.isSaving}
-                    >
-                      {log.isSaved ? 'Guardado' : log.isSaving ? 'Guardando...' : 'Guardar'}
-                    </Button>
-                  </div>
-                )
-              })}
-              {exercise.plannedSets.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Este ejercicio no tiene series objetivo definidas.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+  if (flatSets.length === 0) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4">
+        <p className="text-sm text-muted-foreground">
+          Este día no tiene series para registrar todavía.
+        </p>
+        <Button type="button" onClick={() => router.push('/rutina')}>
+          Volver a Rutina
+        </Button>
       </div>
+    )
+  }
+
+  if (currentIndex >= flatSets.length) {
+    const completedCount = flatSets.filter((flatSet) => {
+      const key = `${flatSet.exerciseId}-${flatSet.setNumber}`
+      return logs[key]?.isSaved
+    }).length
+
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4 text-center">
+        <h1 className="text-lg font-semibold">¡Entrenamiento completo!</h1>
+        <p className="text-sm text-muted-foreground">
+          {completedCount} de {flatSets.length} series completadas en {dayDetail.name}.
+        </p>
+        <Button type="button" onClick={() => router.push('/rutina')}>
+          Volver a Rutina
+        </Button>
+      </div>
+    )
+  }
+
+  const current = flatSets[currentIndex]
+  const currentKey = `${current.exerciseId}-${current.setNumber}`
+  const currentLog = logs[currentKey]
+  const lastValue = lastByKey[currentKey]
+
+  return (
+    <div className="flex min-h-dvh flex-col gap-6 p-4">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger className="self-center rounded-md border px-3 py-1.5 text-sm text-muted-foreground">
+          Serie {currentIndex + 1} de {flatSets.length}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center">
+          {flatSets.map((flatSet, index) => {
+            const key = `${flatSet.exerciseId}-${flatSet.setNumber}`
+            const saved = logs[key]?.isSaved
+            return (
+              <DropdownMenuItem key={key} onClick={() => setCurrentIndex(index)}>
+                {flatSet.exerciseName} — Serie {flatSet.setNumber} {saved ? '✓' : ''}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
+        <div>
+          <h1 className="text-xl font-semibold">{current.exerciseName}</h1>
+          <p className="text-xs text-muted-foreground">
+            {lastValue
+              ? `último: ${lastValue.actualWeight ?? 0}kg × ${lastValue.actualReps}`
+              : 'sin registros anteriores'}
+          </p>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm text-muted-foreground">Repeticiones</p>
+          <div className="flex items-center justify-center gap-4">
+            <Button type="button" variant="outline" size="icon" onClick={() => adjustReps(-1)}>
+              −
+            </Button>
+            <span className="w-12 text-2xl font-semibold">{currentLog?.actualReps ?? 0}</span>
+            <Button type="button" variant="outline" size="icon" onClick={() => adjustReps(1)}>
+              +
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm text-muted-foreground">Peso (kg)</p>
+          <div className="flex items-center justify-center gap-4">
+            <Button type="button" variant="outline" size="icon" onClick={() => adjustWeight(-2.5)}>
+              −
+            </Button>
+            <span className="w-16 text-2xl font-semibold">{currentLog?.actualWeight ?? 0}</span>
+            <Button type="button" variant="outline" size="icon" onClick={() => adjustWeight(2.5)}>
+              +
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Button type="button" size="lg" onClick={handleConfirm} disabled={currentLog?.isSaving}>
+        {currentLog?.isSaving ? 'Guardando...' : 'Confirmar y siguiente →'}
+      </Button>
     </div>
   )
 }
