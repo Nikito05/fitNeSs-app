@@ -38,3 +38,25 @@ export function suggestProgression(
 
   return { action: 'mantener', suggestedWeight: lastSet.actualWeight }
 }
+
+export function suggestProgressionForExercise(
+  goal: TrainingGoal,
+  plannedSets: { setNumber: number; targetReps: number }[],
+  previousSets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
+): Record<number, ProgressionSuggestion> {
+  const suggestions: Record<number, ProgressionSuggestion> = {}
+
+  for (const plannedSet of plannedSets) {
+    const previousSet = previousSets.find((set) => set.setNumber === plannedSet.setNumber)
+    if (!previousSet) continue
+
+    suggestions[plannedSet.setNumber] = suggestProgression(goal, {
+      actualReps: previousSet.actualReps,
+      actualWeight: previousSet.actualWeight,
+      rpe: previousSet.rpe,
+      targetReps: plannedSet.targetReps,
+    })
+  }
+
+  return suggestions
+}
