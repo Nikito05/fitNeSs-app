@@ -6,6 +6,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { listExercises, createCustomExercise } from '@/lib/rutina/exercises-api'
 import type { Exercise } from '@/lib/rutina/types'
+import type { Equipment } from '@/lib/rutina/progression-suggestion'
+
+const EQUIPMENT_OPTIONS: { value: Equipment; label: string }[] = [
+  { value: 'barra', label: 'Barra' },
+  { value: 'mancuernas', label: 'Mancuernas' },
+  { value: 'maquina', label: 'Máquina' },
+  { value: 'peso_corporal', label: 'Peso corporal' },
+  { value: 'polea', label: 'Polea' },
+]
+
+function equipmentLabel(equipment: Equipment): string {
+  return EQUIPMENT_OPTIONS.find((option) => option.value === equipment)?.label ?? equipment
+}
 
 export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) => void }) {
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -14,7 +27,7 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newMuscleGroup, setNewMuscleGroup] = useState('')
-  const [newEquipment, setNewEquipment] = useState('')
+  const [newEquipment, setNewEquipment] = useState<Equipment | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +64,7 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
       setExercises((prev) => [...prev, exercise])
       setNewName('')
       setNewMuscleGroup('')
-      setNewEquipment('')
+      setNewEquipment(null)
       setShowCreateForm(false)
       onSelect(exercise)
     } catch {
@@ -87,7 +100,7 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
             >
               <span className="text-sm font-medium">{exercise.name}</span>
               <span className="text-xs text-muted-foreground">
-                {exercise.muscleGroup} · {exercise.equipment}
+                {exercise.muscleGroup} · {equipmentLabel(exercise.equipment)}
               </span>
             </button>
           </li>
@@ -120,12 +133,20 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="new-exercise-equipment">Equipo</Label>
-            <Input
-              id="new-exercise-equipment"
-              value={newEquipment}
-              onChange={(e) => setNewEquipment(e.target.value)}
-            />
+            <Label>Equipo</Label>
+            <div className="flex flex-wrap gap-2">
+              {EQUIPMENT_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={newEquipment === option.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setNewEquipment(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
           </div>
           <Button type="button" onClick={handleCreate} disabled={isCreating}>
             {isCreating ? 'Creando...' : 'Crear y seleccionar'}

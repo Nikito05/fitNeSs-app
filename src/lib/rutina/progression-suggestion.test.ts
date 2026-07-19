@@ -3,193 +3,197 @@ import { suggestProgression, suggestProgressionForExercise } from './progression
 
 describe('suggestProgression', () => {
   describe('sin datos', () => {
-    it('returns sin_datos when there is no last set', () => {
-      expect(suggestProgression('general', null)).toEqual({ action: 'sin_datos' })
+    it('sin historial', () => {
+      expect(suggestProgression('general', 'barra', 10, [])).toEqual({ action: 'sin_datos' })
     })
 
-    it('returns sin_datos when the last set has no weight (bodyweight exercise)', () => {
+    it('la sesión más reciente no tiene peso registrado', () => {
       expect(
-        suggestProgression('general', {
-          actualReps: 10,
-          actualWeight: null,
-          rpe: 'facil',
-          targetReps: 10,
-        })
+        suggestProgression('general', 'barra', 10, [
+          { actualReps: 10, actualWeight: null, rpe: 'facil' },
+        ])
+      ).toEqual({ action: 'sin_datos' })
+    })
+
+    it('peso corporal nunca sugiere, aunque haya peso registrado (ej. dominadas lastradas)', () => {
+      expect(
+        suggestProgression('fuerza', 'peso_corporal', 10, [
+          { actualReps: 10, actualWeight: 80, rpe: 'facil' },
+        ])
       ).toEqual({ action: 'sin_datos' })
     })
   })
 
-  describe('fuerza', () => {
-    it('sube con facil cuando cumplió el objetivo', () => {
+  describe('bajar', () => {
+    it('baja con una sola sesión: no cumplió objetivo y RPE al límite', () => {
       expect(
-        suggestProgression('fuerza', { actualReps: 5, actualWeight: 100, rpe: 'facil', targetReps: 5 })
-      ).toEqual({ action: 'subir', suggestedWeight: 105 })
-    })
-
-    it('sube con justo cuando cumplió el objetivo', () => {
-      expect(
-        suggestProgression('fuerza', { actualReps: 5, actualWeight: 100, rpe: 'justo', targetReps: 5 })
-      ).toEqual({ action: 'subir', suggestedWeight: 105 })
-    })
-
-    it('sube con al_limite cuando cumplió el objetivo', () => {
-      expect(
-        suggestProgression('fuerza', { actualReps: 5, actualWeight: 100, rpe: 'al_limite', targetReps: 5 })
-      ).toEqual({ action: 'subir', suggestedWeight: 105 })
-    })
-
-    it('baja con al_limite cuando no cumplió el objetivo', () => {
-      expect(
-        suggestProgression('fuerza', { actualReps: 3, actualWeight: 100, rpe: 'al_limite', targetReps: 5 })
-      ).toEqual({ action: 'bajar', suggestedWeight: 95 })
-    })
-
-    it('mantiene cuando no cumplió el objetivo pero no fue al_limite', () => {
-      expect(
-        suggestProgression('fuerza', { actualReps: 3, actualWeight: 100, rpe: 'justo', targetReps: 5 })
-      ).toEqual({ action: 'mantener', suggestedWeight: 100 })
+        suggestProgression('general', 'barra', 8, [
+          { actualReps: 5, actualWeight: 60, rpe: 'al_limite' },
+        ])
+      ).toEqual({ action: 'bajar', suggestedWeight: 55 })
     })
 
     it('nunca baja el peso sugerido debajo de 0', () => {
       expect(
-        suggestProgression('fuerza', { actualReps: 3, actualWeight: 3, rpe: 'al_limite', targetReps: 5 })
+        suggestProgression('general', 'mancuernas', 8, [
+          { actualReps: 5, actualWeight: 1, rpe: 'al_limite' },
+        ])
       ).toEqual({ action: 'bajar', suggestedWeight: 0 })
     })
   })
 
-  describe('hipertrofia', () => {
-    it('sube con facil cuando cumplió el objetivo', () => {
+  describe('mantener', () => {
+    it('no cumplió objetivo pero el RPE no fue al límite: mantiene', () => {
       expect(
-        suggestProgression('hipertrofia', { actualReps: 12, actualWeight: 40, rpe: 'facil', targetReps: 12 })
-      ).toEqual({ action: 'subir', suggestedWeight: 42.5 })
+        suggestProgression('general', 'barra', 8, [
+          { actualReps: 5, actualWeight: 60, rpe: 'justo' },
+        ])
+      ).toEqual({ action: 'mantener', suggestedWeight: 60 })
     })
 
-    it('sube con justo cuando cumplió el objetivo', () => {
+    it('hipertrofia con una sola sesión buena (necesita 2): mantiene', () => {
       expect(
-        suggestProgression('hipertrofia', { actualReps: 12, actualWeight: 40, rpe: 'justo', targetReps: 12 })
-      ).toEqual({ action: 'subir', suggestedWeight: 42.5 })
-    })
-
-    it('mantiene con al_limite aunque haya cumplido el objetivo', () => {
-      expect(
-        suggestProgression('hipertrofia', { actualReps: 12, actualWeight: 40, rpe: 'al_limite', targetReps: 12 })
+        suggestProgression('hipertrofia', 'maquina', 10, [
+          { actualReps: 10, actualWeight: 40, rpe: 'facil' },
+        ])
       ).toEqual({ action: 'mantener', suggestedWeight: 40 })
     })
 
-    it('baja con al_limite cuando no cumplió el objetivo', () => {
+    it('resistencia con 2 sesiones buenas (necesita 3): mantiene', () => {
       expect(
-        suggestProgression('hipertrofia', { actualReps: 8, actualWeight: 40, rpe: 'al_limite', targetReps: 12 })
-      ).toEqual({ action: 'bajar', suggestedWeight: 37.5 })
+        suggestProgression('resistencia', 'mancuernas', 12, [
+          { actualReps: 12, actualWeight: 10, rpe: 'facil' },
+          { actualReps: 12, actualWeight: 10, rpe: 'facil' },
+        ])
+      ).toEqual({ action: 'mantener', suggestedWeight: 10 })
     })
   })
 
-  describe('resistencia', () => {
-    it('sube solo con facil cuando cumplió el objetivo', () => {
+  describe('subir por frecuencia', () => {
+    it('fuerza sube con una sola sesión buena', () => {
       expect(
-        suggestProgression('resistencia', { actualReps: 20, actualWeight: 10, rpe: 'facil', targetReps: 20 })
-      ).toEqual({ action: 'subir', suggestedWeight: 11.25 })
+        suggestProgression('fuerza', 'barra', 5, [
+          { actualReps: 5, actualWeight: 100, rpe: 'justo' },
+        ])
+      ).toEqual({ action: 'subir', suggestedWeight: 105 })
     })
 
-    it('mantiene con justo aunque haya cumplido el objetivo', () => {
+    it('hipertrofia sube al completar 2 sesiones buenas seguidas', () => {
       expect(
-        suggestProgression('resistencia', { actualReps: 20, actualWeight: 10, rpe: 'justo', targetReps: 20 })
-      ).toEqual({ action: 'mantener', suggestedWeight: 10 })
+        suggestProgression('hipertrofia', 'maquina', 10, [
+          { actualReps: 10, actualWeight: 40, rpe: 'facil' },
+          { actualReps: 10, actualWeight: 40, rpe: 'justo' },
+        ])
+      ).toEqual({ action: 'subir', suggestedWeight: 42.5 })
     })
 
-    it('mantiene con al_limite aunque haya cumplido el objetivo', () => {
+    it('resistencia sube al completar 3 sesiones buenas', () => {
       expect(
-        suggestProgression('resistencia', { actualReps: 20, actualWeight: 10, rpe: 'al_limite', targetReps: 20 })
-      ).toEqual({ action: 'mantener', suggestedWeight: 10 })
+        suggestProgression('resistencia', 'mancuernas', 12, [
+          { actualReps: 12, actualWeight: 10, rpe: 'facil' },
+          { actualReps: 12, actualWeight: 10, rpe: 'facil' },
+          { actualReps: 12, actualWeight: 10, rpe: 'justo' },
+        ])
+      ).toEqual({ action: 'subir', suggestedWeight: 12 })
     })
 
-    it('baja con al_limite cuando no cumplió el objetivo', () => {
+    it('general sube al completar 2 sesiones buenas', () => {
       expect(
-        suggestProgression('resistencia', { actualReps: 15, actualWeight: 10, rpe: 'al_limite', targetReps: 20 })
-      ).toEqual({ action: 'bajar', suggestedWeight: 8.75 })
-    })
-  })
-
-  describe('general', () => {
-    it('sube con facil cuando cumplió el objetivo', () => {
-      expect(
-        suggestProgression('general', { actualReps: 10, actualWeight: 30, rpe: 'facil', targetReps: 10 })
+        suggestProgression('general', 'maquina', 10, [
+          { actualReps: 10, actualWeight: 30, rpe: 'facil' },
+          { actualReps: 10, actualWeight: 30, rpe: 'facil' },
+        ])
       ).toEqual({ action: 'subir', suggestedWeight: 32.5 })
     })
 
-    it('mantiene con al_limite aunque haya cumplido el objetivo', () => {
+    it('una sesión que no califica en el medio de la racha no resetea el conteo', () => {
+      // Sesión más reciente: buena. Sesión del medio: no cumplió objetivo (se saltea).
+      // Sesión más antigua: buena. Hipertrofia necesita 2 — se alcanzan igual.
       expect(
-        suggestProgression('general', { actualReps: 10, actualWeight: 30, rpe: 'al_limite', targetReps: 10 })
-      ).toEqual({ action: 'mantener', suggestedWeight: 30 })
+        suggestProgression('hipertrofia', 'maquina', 10, [
+          { actualReps: 10, actualWeight: 40, rpe: 'facil' },
+          { actualReps: 5, actualWeight: 40, rpe: 'justo' },
+          { actualReps: 10, actualWeight: 38, rpe: 'facil' },
+        ])
+      ).toEqual({ action: 'subir', suggestedWeight: 42.5 })
+    })
+
+    it('el peso base para subir es siempre el de la sesión más reciente, no el de la sesión que completó la racha', () => {
+      expect(
+        suggestProgression('hipertrofia', 'barra', 5, [
+          { actualReps: 5, actualWeight: 100, rpe: 'facil' },
+          { actualReps: 5, actualWeight: 90, rpe: 'facil' },
+        ])
+      ).toEqual({ action: 'subir', suggestedWeight: 105 })
+    })
+  })
+
+  describe('incrementos por equipamiento', () => {
+    it('barra: +5kg', () => {
+      expect(
+        suggestProgression('fuerza', 'barra', 5, [{ actualReps: 5, actualWeight: 100, rpe: 'facil' }])
+      ).toEqual({ action: 'subir', suggestedWeight: 105 })
+    })
+
+    it('mancuernas: +2kg', () => {
+      expect(
+        suggestProgression('fuerza', 'mancuernas', 10, [{ actualReps: 10, actualWeight: 20, rpe: 'facil' }])
+      ).toEqual({ action: 'subir', suggestedWeight: 22 })
+    })
+
+    it('maquina: +2.5kg', () => {
+      expect(
+        suggestProgression('fuerza', 'maquina', 10, [{ actualReps: 10, actualWeight: 40, rpe: 'facil' }])
+      ).toEqual({ action: 'subir', suggestedWeight: 42.5 })
+    })
+
+    it('polea: +2.5kg (igual que máquina)', () => {
+      expect(
+        suggestProgression('fuerza', 'polea', 10, [{ actualReps: 10, actualWeight: 15, rpe: 'facil' }])
+      ).toEqual({ action: 'subir', suggestedWeight: 17.5 })
     })
   })
 })
 
 describe('suggestProgressionForExercise', () => {
-  it('con 3 series al mismo peso base, sugiere el incremento una sola vez por serie (no acumulado)', () => {
+  it('calcula una sugerencia independiente por cada número de serie', () => {
     const plannedSets = [
       { setNumber: 1, targetReps: 10 },
       { setNumber: 2, targetReps: 10 },
-      { setNumber: 3, targetReps: 10 },
     ]
-    const previousSets = [
-      { setNumber: 1, actualReps: 10, actualWeight: 45, rpe: 'justo' as const },
-      { setNumber: 2, actualReps: 10, actualWeight: 45, rpe: 'justo' as const },
-      { setNumber: 3, actualReps: 10, actualWeight: 45, rpe: 'justo' as const },
+    const pastSessions = [
+      {
+        sets: [
+          { setNumber: 1, actualReps: 10, actualWeight: 45, rpe: 'facil' as const },
+          { setNumber: 2, actualReps: 10, actualWeight: 35, rpe: 'facil' as const },
+        ],
+      },
     ]
 
-    const result = suggestProgressionForExercise('hipertrofia', plannedSets, previousSets)
+    const result = suggestProgressionForExercise('fuerza', 'barra', plannedSets, pastSessions)
 
-    expect(result).toEqual({
-      1: { action: 'subir', suggestedWeight: 47.5 },
-      2: { action: 'subir', suggestedWeight: 47.5 },
-      3: { action: 'subir', suggestedWeight: 47.5 },
-    })
+    expect(result[1]).toEqual({ action: 'subir', suggestedWeight: 50 })
+    expect(result[2]).toEqual({ action: 'subir', suggestedWeight: 40 })
   })
 
-  it('en una rutina piramidal, cada serie se compara contra su propia serie anterior (no contra la de mayor set_number)', () => {
-    // Caso real reproducido: Press banca, sesión anterior con series piramidales
-    // (45/10, 35/10, 40/8, 40/6, 50/1). La serie 5 (50kg x 1) es un pico de fuerza,
-    // no representativa de las demás series — no debe usarse como ancla única.
-    const plannedSets = [
-      { setNumber: 1, targetReps: 10 },
-      { setNumber: 2, targetReps: 10 },
-      { setNumber: 3, targetReps: 8 },
-      { setNumber: 4, targetReps: 6 },
-      { setNumber: 5, targetReps: 1 },
-    ]
-    const previousSets = [
-      { setNumber: 1, actualReps: 10, actualWeight: 45, rpe: 'justo' as const },
-      { setNumber: 2, actualReps: 10, actualWeight: 35, rpe: 'justo' as const },
-      { setNumber: 3, actualReps: 8, actualWeight: 40, rpe: 'justo' as const },
-      { setNumber: 4, actualReps: 6, actualWeight: 40, rpe: 'justo' as const },
-      { setNumber: 5, actualReps: 1, actualWeight: 50, rpe: 'justo' as const },
-    ]
-
-    const result = suggestProgressionForExercise('hipertrofia', plannedSets, previousSets)
-
-    expect(result[1]).toEqual({ action: 'subir', suggestedWeight: 47.5 })
-    expect(result[2]).toEqual({ action: 'subir', suggestedWeight: 37.5 })
-    expect(result[3]).toEqual({ action: 'subir', suggestedWeight: 42.5 })
-    expect(result[4]).toEqual({ action: 'subir', suggestedWeight: 42.5 })
-    expect(result[5]).toEqual({ action: 'subir', suggestedWeight: 52.5 })
-  })
-
-  it('omite la sugerencia de una serie sin historial previo para ese número de serie', () => {
+  it('omite la serie que no tiene ningún historial previo', () => {
     const plannedSets = [
       { setNumber: 1, targetReps: 10 },
       { setNumber: 2, targetReps: 10 },
     ]
-    const previousSets = [{ setNumber: 1, actualReps: 10, actualWeight: 45, rpe: 'justo' as const }]
+    const pastSessions = [
+      { sets: [{ setNumber: 1, actualReps: 10, actualWeight: 45, rpe: 'facil' as const }] },
+    ]
 
-    const result = suggestProgressionForExercise('hipertrofia', plannedSets, previousSets)
+    const result = suggestProgressionForExercise('fuerza', 'barra', plannedSets, pastSessions)
 
-    expect(result[1]).toEqual({ action: 'subir', suggestedWeight: 47.5 })
+    expect(result[1]).toEqual({ action: 'subir', suggestedWeight: 50 })
     expect(result[2]).toBeUndefined()
   })
 
-  it('devuelve un objeto vacío cuando no hay series previas', () => {
+  it('devuelve un objeto vacío cuando no hay sesiones pasadas', () => {
     const plannedSets = [{ setNumber: 1, targetReps: 10 }]
 
-    expect(suggestProgressionForExercise('hipertrofia', plannedSets, [])).toEqual({})
+    expect(suggestProgressionForExercise('fuerza', 'barra', plannedSets, [])).toEqual({})
   })
 })

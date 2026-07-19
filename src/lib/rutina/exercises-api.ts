@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Exercise } from './types'
+import type { Equipment } from './progression-suggestion'
 
 type ExerciseRow = {
   id: string
   user_id: string | null
   name: string
   muscle_group: string
-  equipment: string
+  equipment: Equipment
 }
 
 function mapExercise(row: ExerciseRow): Exercise {
@@ -33,7 +34,7 @@ export async function listExercises(): Promise<Exercise[]> {
 export async function createCustomExercise(input: {
   name: string
   muscleGroup: string
-  equipment: string
+  equipment: Equipment
 }): Promise<Exercise> {
   const supabase = createClient()
   const {
