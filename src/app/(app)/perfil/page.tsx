@@ -30,6 +30,8 @@ export default function PerfilPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
+      setFontSize(getStoredFontSize())
+
       if (!user) {
         setIsLoading(false)
         return
@@ -48,7 +50,6 @@ export default function PerfilPage() {
     }
 
     loadProfile()
-    setFontSize(getStoredFontSize())
   }, [])
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
