@@ -18,7 +18,13 @@ import {
 } from '@/lib/rutina/sessions-api'
 import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
-import type { Rpe } from '@/lib/rutina/progression-suggestion'
+import {
+  suggestProgression,
+  type ProgressionSuggestion,
+  type Rpe,
+  type TrainingGoal,
+} from '@/lib/rutina/progression-suggestion'
+import { createClient } from '@/lib/supabase/client'
 
 type SetLogState = {
   actualReps: number
@@ -43,6 +49,7 @@ export default function EntrenarPage() {
   const [flatSets, setFlatSets] = useState<FlatPlannedSet[]>([])
   const [logs, setLogs] = useState<Record<string, SetLogState>>({})
   const [lastByKey, setLastByKey] = useState<Record<string, LastValue>>({})
+  const [suggestByExercise, setSuggestByExercise] = useState<Record<string, ProgressionSuggestion>>({})
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +94,24 @@ export default function EntrenarPage() {
           uniqueExerciseIds.map((id) => listSessionsForExercise(id))
         )
 
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        let trainingGoal: TrainingGoal = 'general'
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('training_goal')
+            .eq('id', user.id)
+            .single()
+          trainingGoal = (profile?.training_goal as TrainingGoal) ?? 'general'
+        }
+
         const lastValues: Record<string, LastValue> = {}
+        const suggestions: Record<string, ProgressionSuggestion> = {}
+
         uniqueExerciseIds.forEach((exerciseId, i) => {
           const pastSessions = histories[i].filter((s) => s.sessionId !== session.id)
           const mostRecent = pastSessions[0]
@@ -97,6 +121,26 @@ export default function EntrenarPage() {
                 actualReps: set.actualReps,
                 actualWeight: set.actualWeight,
               }
+            }
+
+            const lastSet = mostRecent.sets.reduce((max, set) =>
+              set.setNumber > max.setNumber ? set : max
+            )
+            const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
+            const matchingPlanned = exerciseDetail?.plannedSets.find(
+              (planned) => planned.setNumber === lastSet.setNumber
+            )
+            const targetReps =
+              matchingPlanned?.targetReps ??
+              exerciseDetail?.plannedSets[exerciseDetail.plannedSets.length - 1]?.targetReps
+
+            if (targetReps !== undefined) {
+              suggestions[exerciseId] = suggestProgression(trainingGoal, {
+                actualReps: lastSet.actualReps,
+                actualWeight: lastSet.actualWeight,
+                rpe: lastSet.rpe,
+                targetReps,
+              })
             }
           }
         })
@@ -111,6 +155,7 @@ export default function EntrenarPage() {
         setFlatSets(flat)
         setLogs(initialLogs)
         setLastByKey(lastValues)
+        setSuggestByExercise(suggestions)
         setCurrentIndex(findFirstUnsavedIndex(flat, isSavedByKey))
       } catch {
         setError('No pudimos cargar el entrenamiento de hoy.')
@@ -233,6 +278,7 @@ export default function EntrenarPage() {
   const currentKey = `${current.exerciseId}-${current.setNumber}`
   const currentLog = logs[currentKey]
   const lastValue = lastByKey[currentKey]
+  const suggestion = suggestByExercise[current.exerciseId]
 
   return (
     <div className="flex min-h-dvh flex-col gap-6 p-4">
@@ -263,6 +309,13 @@ export default function EntrenarPage() {
               ? `último: ${lastValue.actualWeight ?? 0}kg × ${lastValue.actualReps}`
               : 'sin registros anteriores'}
           </p>
+          {suggestion && suggestion.action !== 'sin_datos' && (
+            <p className="text-xs text-muted-foreground">
+              {suggestion.action === 'subir' && `↑ Sugerencia: subir a ${suggestion.suggestedWeight}kg`}
+              {suggestion.action === 'mantener' && `= Mantener ${suggestion.suggestedWeight}kg`}
+              {suggestion.action === 'bajar' && `↓ Bajar a ${suggestion.suggestedWeight}kg`}
+            </p>
+          )}
         </div>
 
         <div>
