@@ -19,7 +19,7 @@ import {
 import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
 import {
-  suggestProgression,
+  suggestProgressionForExercise,
   type ProgressionSuggestion,
   type Rpe,
   type TrainingGoal,
@@ -49,7 +49,7 @@ export default function EntrenarPage() {
   const [flatSets, setFlatSets] = useState<FlatPlannedSet[]>([])
   const [logs, setLogs] = useState<Record<string, SetLogState>>({})
   const [lastByKey, setLastByKey] = useState<Record<string, LastValue>>({})
-  const [suggestByExercise, setSuggestByExercise] = useState<Record<string, ProgressionSuggestion>>({})
+  const [suggestBySet, setSuggestBySet] = useState<Record<string, ProgressionSuggestion>>({})
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -123,24 +123,14 @@ export default function EntrenarPage() {
               }
             }
 
-            const lastSet = mostRecent.sets.reduce((max, set) =>
-              set.setNumber > max.setNumber ? set : max
-            )
             const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
-            const matchingPlanned = exerciseDetail?.plannedSets.find(
-              (planned) => planned.setNumber === lastSet.setNumber
+            const suggestionsForExercise = suggestProgressionForExercise(
+              trainingGoal,
+              exerciseDetail?.plannedSets ?? [],
+              mostRecent.sets
             )
-            const targetReps =
-              matchingPlanned?.targetReps ??
-              exerciseDetail?.plannedSets[exerciseDetail.plannedSets.length - 1]?.targetReps
-
-            if (targetReps !== undefined) {
-              suggestions[exerciseId] = suggestProgression(trainingGoal, {
-                actualReps: lastSet.actualReps,
-                actualWeight: lastSet.actualWeight,
-                rpe: lastSet.rpe,
-                targetReps,
-              })
+            for (const [setNumber, suggestion] of Object.entries(suggestionsForExercise)) {
+              suggestions[`${exerciseId}-${setNumber}`] = suggestion
             }
           }
         })
@@ -155,7 +145,7 @@ export default function EntrenarPage() {
         setFlatSets(flat)
         setLogs(initialLogs)
         setLastByKey(lastValues)
-        setSuggestByExercise(suggestions)
+        setSuggestBySet(suggestions)
         setCurrentIndex(findFirstUnsavedIndex(flat, isSavedByKey))
       } catch {
         setError('No pudimos cargar el entrenamiento de hoy.')
@@ -278,7 +268,7 @@ export default function EntrenarPage() {
   const currentKey = `${current.exerciseId}-${current.setNumber}`
   const currentLog = logs[currentKey]
   const lastValue = lastByKey[currentKey]
-  const suggestion = suggestByExercise[current.exerciseId]
+  const suggestion = suggestBySet[currentKey]
 
   return (
     <div className="flex min-h-dvh flex-col gap-6 p-4">
