@@ -128,3 +128,11 @@
     @apply font-sans;
   }
 }
+
+:root[data-font-size="large"] {
+  font-size: 112.5%;
+}
+
+:root[data-font-size="xlarge"] {
+  font-size: 125%;
+}
