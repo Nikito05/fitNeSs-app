@@ -21,6 +21,7 @@ export default function PerfilPage() {
   const [displayName, setDisplayName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingGoal, setIsSavingGoal] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<FontSize>('normal')
   const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('general')
@@ -93,21 +94,27 @@ export default function PerfilPage() {
   }
 
   async function handleTrainingGoalChange(goal: TrainingGoal) {
+    setMessage(null)
     setTrainingGoal(goal)
+    setIsSavingGoal(true)
 
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-    if (!user) return
+      if (!user) return
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ training_goal: goal })
-      .eq('id', user.id)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ training_goal: goal })
+        .eq('id', user.id)
 
-    if (error) setMessage('No pudimos guardar el objetivo de entrenamiento.')
+      if (error) setMessage('No pudimos guardar el objetivo de entrenamiento.')
+    } finally {
+      setIsSavingGoal(false)
+    }
   }
 
   if (isLoading) {
@@ -181,6 +188,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={trainingGoal === 'fuerza' ? 'default' : 'outline'}
                 size="sm"
+                disabled={isSavingGoal}
                 onClick={() => handleTrainingGoalChange('fuerza')}
               >
                 Fuerza
@@ -189,6 +197,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={trainingGoal === 'hipertrofia' ? 'default' : 'outline'}
                 size="sm"
+                disabled={isSavingGoal}
                 onClick={() => handleTrainingGoalChange('hipertrofia')}
               >
                 Hipertrofia
@@ -197,6 +206,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={trainingGoal === 'resistencia' ? 'default' : 'outline'}
                 size="sm"
+                disabled={isSavingGoal}
                 onClick={() => handleTrainingGoalChange('resistencia')}
               >
                 Resistencia
@@ -205,6 +215,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={trainingGoal === 'general' ? 'default' : 'outline'}
                 size="sm"
+                disabled={isSavingGoal}
                 onClick={() => handleTrainingGoalChange('general')}
               >
                 General
