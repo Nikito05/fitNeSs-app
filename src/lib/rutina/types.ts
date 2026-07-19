@@ -1,3 +1,5 @@
+import type { Rpe } from './progression-suggestion'
+
 export type Exercise = {
   id: string
   userId: string | null
@@ -59,4 +61,5 @@ export type LoggedSet = {
   setNumber: number
   actualReps: number
   actualWeight: number | null
+  rpe: Rpe
 }

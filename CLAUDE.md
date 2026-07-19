@@ -140,6 +140,11 @@ Tu memoria no viaja a otra cuenta, otra máquina, ni a una sesión que arranca d
 - Mantené una sección **"Decisiones / desviaciones del spec original"** en el `CLAUDE.md`/`HANDOFF.md` del proyecto, con cada decisión que se apartó del plan original y **el por qué** (el código ya muestra el qué).
 - Cada decisión relevante debería tener su spec correspondiente en `docs/superpowers/specs/` con el detalle completo.
 
+### Decisiones registradas
+
+- **Campo `training_goal` en `profiles`** (Feature 5, `docs/superpowers/specs/2026-07-19-feature-5-sugerencia-progresion.md`): se agregó un campo liviano de objetivo de entrenamiento (`fuerza` / `hipertrofia` / `resistencia` / `general`, default `'general'`) al perfil del usuario, pensado para que el futuro Módulo de Macros lo reutilice (el cálculo de calorías/macros también depende del objetivo del usuario) en vez de volver a preguntarlo. Si Macros necesita un objetivo con más granularidad (ej. plazo, déficit/superávit específico), evaluar en su momento si extiende este mismo campo o si necesita uno propio — no asumido todavía.
+- **Incremento de peso fijo en kg por objetivo, no por tipo de ejercicio** (Feature 5): la sugerencia de progresión (`src/lib/rutina/progression-suggestion.ts`) usa un incremento fijo en kg por objetivo de entrenamiento (Fuerza +5kg, Hipertrofia +2.5kg, Resistencia +1.25kg, General +2.5kg), sin diferenciar por tipo de ejercicio. Limitación conocida: es poco realista en ejercicios de aislamiento livianos (ej. +5kg de un salto en un curl de bíceps). Se acepta por ahora por simplicidad — se resuelve en una fase futura categorizando ejercicios por tipo (compuesto/aislamiento) para ajustar el incremento según corresponda.
+
 ## Gotchas de plataforma
 
 Mantené una sección viva en `CLAUDE.md`/`HANDOFF.md` con cada bug de entorno/plataforma no obvio que resuelvas (no bugs de lógica de negocio — cosas tipo "esta librería se rompe en Windows", "esta API necesita HTTPS"), con la solución aplicada, para no perder tiempo redescubriéndolo.

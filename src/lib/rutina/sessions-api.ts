@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import type { WorkoutSession, LoggedSet } from './types'
+import type { Rpe } from './progression-suggestion'
 
 type WorkoutSessionRow = {
   id: string
@@ -54,7 +55,7 @@ export async function getLoggedSetsForSession(workoutSessionId: string): Promise
   const supabase = createClient()
   const { data, error } = await supabase
     .from('logged_sets')
-    .select('id, workout_session_id, exercise_id, set_number, actual_reps, actual_weight')
+    .select('id, workout_session_id, exercise_id, set_number, actual_reps, actual_weight, rpe')
     .eq('workout_session_id', workoutSessionId)
 
   if (error) throw error
@@ -65,6 +66,7 @@ export async function getLoggedSetsForSession(workoutSessionId: string): Promise
     setNumber: row.set_number,
     actualReps: row.actual_reps,
     actualWeight: row.actual_weight,
+    rpe: row.rpe as Rpe,
   }))
 }
 
@@ -74,6 +76,7 @@ export async function saveLoggedSet(input: {
   setNumber: number
   actualReps: number
   actualWeight: number | null
+  rpe: Rpe
 }): Promise<void> {
   const supabase = createClient()
 
@@ -90,7 +93,7 @@ export async function saveLoggedSet(input: {
   if (existing) {
     const { error } = await supabase
       .from('logged_sets')
-      .update({ actual_reps: input.actualReps, actual_weight: input.actualWeight })
+      .update({ actual_reps: input.actualReps, actual_weight: input.actualWeight, rpe: input.rpe })
       .eq('id', existing.id)
 
     if (error) throw error
@@ -103,6 +106,7 @@ export async function saveLoggedSet(input: {
     set_number: input.setNumber,
     actual_reps: input.actualReps,
     actual_weight: input.actualWeight,
+    rpe: input.rpe,
   })
 
   if (error) throw error
@@ -112,7 +116,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   {
     sessionId: string
     sessionDate: string
-    sets: { setNumber: number; actualReps: number; actualWeight: number | null }[]
+    sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
   }[]
 > {
   const supabase = createClient()
@@ -120,7 +124,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   const { data: setsData, error: setsError } = await supabase
     .from('logged_sets')
     .select(
-      'set_number, actual_reps, actual_weight, workout_session_id, workout_sessions(session_date)'
+      'set_number, actual_reps, actual_weight, rpe, workout_session_id, workout_sessions(session_date)'
     )
     .eq('exercise_id', exerciseId)
     .order('set_number')
@@ -131,7 +135,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
 
   const sessionMap = new Map<
     string,
-    { sessionDate: string; sets: { setNumber: number; actualReps: number; actualWeight: number | null }[] }
+    { sessionDate: string; sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[] }
   >()
 
   for (const row of rows) {
@@ -142,6 +146,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
       setNumber: row.set_number,
       actualReps: row.actual_reps,
       actualWeight: row.actual_weight,
+      rpe: row.rpe as Rpe,
     }
 
     if (existing) {
