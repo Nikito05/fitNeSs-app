@@ -1,4 +1,4 @@
-import type { Rpe } from './progression-suggestion'
+import type { Rpe, Equipment } from './progression-suggestion'
 
 export type Exercise = {
   id: string
@@ -35,6 +35,7 @@ export type RoutineDayExerciseDetail = {
   exerciseId: string
   exerciseName: string
   exerciseOrder: number
+  equipment: Equipment
   plannedSets: PlannedSet[]
 }
 

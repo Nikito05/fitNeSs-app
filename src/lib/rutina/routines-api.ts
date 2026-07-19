@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Routine, RoutineDay, RoutineDayDetail } from './types'
+import type { Equipment } from './progression-suggestion'
 
 type RoutineRow = { id: string; user_id: string; name: string; is_active: boolean }
 type RoutineDayRow = { id: string; routine_id: string; name: string; day_order: number }
@@ -147,7 +148,7 @@ export async function getRoutineDayDetail(dayId: string): Promise<RoutineDayDeta
 
   const { data: exercisesData, error: exercisesError } = await supabase
     .from('routine_day_exercises')
-    .select('id, exercise_id, exercise_order, exercises(name)')
+    .select('id, exercise_id, exercise_order, exercises(name, equipment)')
     .eq('routine_day_id', dayId)
     .order('exercise_order')
 
@@ -176,8 +177,10 @@ export async function getRoutineDayDetail(dayId: string): Promise<RoutineDayDeta
     exercises: dayExercises.map((e) => ({
       id: e.id,
       exerciseId: e.exercise_id,
-      exerciseName: (e.exercises as unknown as { name: string })?.name ?? '',
+      exerciseName: (e.exercises as unknown as { name: string; equipment: Equipment })?.name ?? '',
       exerciseOrder: e.exercise_order,
+      equipment:
+        (e.exercises as unknown as { name: string; equipment: Equipment })?.equipment ?? 'maquina',
       plannedSets: sets
         .filter((s) => s.routine_day_exercise_id === e.id)
         .map((s) => ({

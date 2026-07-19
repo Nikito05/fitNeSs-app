@@ -1,16 +1,20 @@
 export type TrainingGoal = 'fuerza' | 'hipertrofia' | 'resistencia' | 'general'
 export type Rpe = 'facil' | 'justo' | 'al_limite'
+export type Equipment = 'barra' | 'mancuernas' | 'maquina' | 'peso_corporal' | 'polea'
 
-type GoalProfile = {
-  increaseOnRpe: Rpe[]
-  weightIncrement: number
+const EQUIPMENT_INCREMENTS: Record<Equipment, number | null> = {
+  barra: 5,
+  mancuernas: 2,
+  maquina: 2.5,
+  polea: 2.5,
+  peso_corporal: null,
 }
 
-const GOAL_PROFILES: Record<TrainingGoal, GoalProfile> = {
-  fuerza: { increaseOnRpe: ['facil', 'justo', 'al_limite'], weightIncrement: 5 },
-  hipertrofia: { increaseOnRpe: ['facil', 'justo'], weightIncrement: 2.5 },
-  resistencia: { increaseOnRpe: ['facil'], weightIncrement: 1.25 },
-  general: { increaseOnRpe: ['facil', 'justo'], weightIncrement: 2.5 },
+const GOAL_SESSIONS_REQUIRED: Record<TrainingGoal, number> = {
+  fuerza: 1,
+  hipertrofia: 2,
+  resistencia: 3,
+  general: 2,
 }
 
 export type ProgressionSuggestion =
@@ -19,43 +23,65 @@ export type ProgressionSuggestion =
   | { action: 'bajar'; suggestedWeight: number }
   | { action: 'sin_datos' }
 
+export type HistoricalSetEntry = {
+  actualReps: number
+  actualWeight: number | null
+  rpe: Rpe
+}
+
 export function suggestProgression(
   goal: TrainingGoal,
-  lastSet: { actualReps: number; actualWeight: number | null; rpe: Rpe; targetReps: number } | null
+  equipment: Equipment,
+  targetReps: number,
+  history: HistoricalSetEntry[]
 ): ProgressionSuggestion {
-  if (!lastSet || lastSet.actualWeight === null) return { action: 'sin_datos' }
+  if (history.length === 0) return { action: 'sin_datos' }
 
-  const profile = GOAL_PROFILES[goal]
-  const metTarget = lastSet.actualReps >= lastSet.targetReps
+  const last = history[0]
+  if (last.actualWeight === null) return { action: 'sin_datos' }
 
-  if (metTarget && profile.increaseOnRpe.includes(lastSet.rpe)) {
-    return { action: 'subir', suggestedWeight: lastSet.actualWeight + profile.weightIncrement }
+  const increment = EQUIPMENT_INCREMENTS[equipment]
+  if (increment === null) return { action: 'sin_datos' }
+
+  const lastActualWeight = last.actualWeight
+  const lastMetTarget = last.actualReps >= targetReps
+
+  if (!lastMetTarget && last.rpe === 'al_limite') {
+    return { action: 'bajar', suggestedWeight: Math.max(0, lastActualWeight - increment) }
   }
 
-  if (!metTarget && lastSet.rpe === 'al_limite') {
-    return { action: 'bajar', suggestedWeight: Math.max(0, lastSet.actualWeight - profile.weightIncrement) }
+  const required = GOAL_SESSIONS_REQUIRED[goal]
+  let qualifying = 0
+  for (const set of history) {
+    const met = set.actualReps >= targetReps
+    const goodRpe = set.rpe === 'facil' || set.rpe === 'justo'
+    if (met && goodRpe) {
+      qualifying += 1
+      if (qualifying >= required) {
+        return { action: 'subir', suggestedWeight: lastActualWeight + increment }
+      }
+    }
   }
 
-  return { action: 'mantener', suggestedWeight: lastSet.actualWeight }
+  return { action: 'mantener', suggestedWeight: lastActualWeight }
 }
 
 export function suggestProgressionForExercise(
   goal: TrainingGoal,
+  equipment: Equipment,
   plannedSets: { setNumber: number; targetReps: number }[],
-  previousSets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
+  pastSessions: { sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[] }[]
 ): Record<number, ProgressionSuggestion> {
   const suggestions: Record<number, ProgressionSuggestion> = {}
 
   for (const plannedSet of plannedSets) {
-    const previousSet = previousSets.find((set) => set.setNumber === plannedSet.setNumber)
-    if (!previousSet) continue
+    const history = pastSessions
+      .map((session) => session.sets.find((set) => set.setNumber === plannedSet.setNumber))
+      .filter((set): set is NonNullable<typeof set> => set !== undefined)
 
-    suggestions[plannedSet.setNumber] = suggestProgression(goal, {
-      actualReps: previousSet.actualReps,
-      actualWeight: previousSet.actualWeight,
-      rpe: previousSet.rpe,
-      targetReps: plannedSet.targetReps,
-    })
+    if (history.length > 0) {
+      suggestions[plannedSet.setNumber] = suggestProgression(goal, equipment, plannedSet.targetReps, history)
+    }
   }
 
   return suggestions

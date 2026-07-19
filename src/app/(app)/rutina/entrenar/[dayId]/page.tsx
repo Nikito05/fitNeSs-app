@@ -20,6 +20,7 @@ import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '
 import type { RoutineDayDetail } from '@/lib/rutina/types'
 import {
   suggestProgressionForExercise,
+  type Equipment,
   type ProgressionSuggestion,
   type Rpe,
   type TrainingGoal,
@@ -122,16 +123,18 @@ export default function EntrenarPage() {
                 actualWeight: set.actualWeight,
               }
             }
+          }
 
-            const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
-            const suggestionsForExercise = suggestProgressionForExercise(
-              trainingGoal,
-              exerciseDetail?.plannedSets ?? [],
-              mostRecent.sets
-            )
-            for (const [setNumber, suggestion] of Object.entries(suggestionsForExercise)) {
-              suggestions[`${exerciseId}-${setNumber}`] = suggestion
-            }
+          const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
+          const equipment: Equipment = exerciseDetail?.equipment ?? 'maquina'
+          const suggestionsForExercise = suggestProgressionForExercise(
+            trainingGoal,
+            equipment,
+            exerciseDetail?.plannedSets ?? [],
+            pastSessions
+          )
+          for (const [setNumber, suggestion] of Object.entries(suggestionsForExercise)) {
+            suggestions[`${exerciseId}-${setNumber}`] = suggestion
           }
         })
 
