@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  applyFontSize,
+  getStoredFontSize,
+  setStoredFontSize,
+  type FontSize,
+} from '@/lib/font-size'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -15,6 +21,7 @@ export default function PerfilPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [fontSize, setFontSize] = useState<FontSize>('normal')
 
   useEffect(() => {
     async function loadProfile() {
@@ -41,6 +48,7 @@ export default function PerfilPage() {
     }
 
     loadProfile()
+    setFontSize(getStoredFontSize())
   }, [])
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -72,6 +80,12 @@ export default function PerfilPage() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  function handleFontSizeChange(size: FontSize) {
+    setStoredFontSize(size)
+    applyFontSize(size)
+    setFontSize(size)
   }
 
   if (isLoading) {
@@ -107,7 +121,38 @@ export default function PerfilPage() {
               {isSaving ? 'Guardando...' : 'Guardar cambios'}
             </Button>
           </form>
-          <Button variant="outline" className="mt-4 w-full" onClick={handleLogout}>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Tamaño de letra</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={fontSize === 'normal' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleFontSizeChange('normal')}
+              >
+                Normal
+              </Button>
+              <Button
+                type="button"
+                variant={fontSize === 'large' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleFontSizeChange('large')}
+              >
+                Grande
+              </Button>
+              <Button
+                type="button"
+                variant={fontSize === 'xlarge' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleFontSizeChange('xlarge')}
+              >
+                Muy grande
+              </Button>
+            </div>
+          </div>
+
+          <Button variant="outline" className="mt-6 w-full" onClick={handleLogout}>
             Cerrar sesión
           </Button>
         </CardContent>
