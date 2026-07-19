@@ -18,10 +18,12 @@ import {
 } from '@/lib/rutina/sessions-api'
 import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
+import type { Rpe } from '@/lib/rutina/progression-suggestion'
 
 type SetLogState = {
   actualReps: number
   actualWeight: number | null
+  rpe: Rpe
   isSaved: boolean
   isSaving: boolean
 }
@@ -67,12 +69,14 @@ export default function EntrenarPage() {
             ? {
                 actualReps: existing.actualReps,
                 actualWeight: existing.actualWeight,
+                rpe: existing.rpe,
                 isSaved: true,
                 isSaving: false,
               }
             : {
                 actualReps: flatSet.targetReps,
                 actualWeight: flatSet.targetWeight,
+                rpe: 'justo',
                 isSaved: false,
                 isSaving: false,
               }
@@ -142,6 +146,16 @@ export default function EntrenarPage() {
     }))
   }
 
+  function setRpe(rpe: Rpe) {
+    const current = flatSets[currentIndex]
+    if (!current) return
+    const key = `${current.exerciseId}-${current.setNumber}`
+    setLogs((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], rpe, isSaved: false },
+    }))
+  }
+
   async function handleConfirm() {
     const current = flatSets[currentIndex]
     if (!current || !sessionId) return
@@ -157,6 +171,7 @@ export default function EntrenarPage() {
         setNumber: current.setNumber,
         actualReps: log.actualReps,
         actualWeight: log.actualWeight,
+        rpe: log.rpe,
       })
       setLogs((prev) => ({ ...prev, [key]: { ...prev[key], isSaving: false, isSaved: true } }))
       setCurrentIndex((prev) => prev + 1)
@@ -272,6 +287,36 @@ export default function EntrenarPage() {
             <span className="w-16 text-2xl font-semibold">{currentLog?.actualWeight ?? 0}</span>
             <Button type="button" variant="outline" size="icon" onClick={() => adjustWeight(2.5)}>
               +
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm text-muted-foreground">Esfuerzo</p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              type="button"
+              variant={currentLog?.rpe === 'facil' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRpe('facil')}
+            >
+              Fácil
+            </Button>
+            <Button
+              type="button"
+              variant={currentLog?.rpe === 'justo' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRpe('justo')}
+            >
+              Justo
+            </Button>
+            <Button
+              type="button"
+              variant={currentLog?.rpe === 'al_limite' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRpe('al_limite')}
+            >
+              Al límite
             </Button>
           </div>
         </div>
