@@ -13,6 +13,7 @@ import {
   setStoredFontSize,
   type FontSize,
 } from '@/lib/font-size'
+import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -22,6 +23,7 @@ export default function PerfilPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<FontSize>('normal')
+  const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('general')
 
   useEffect(() => {
     async function loadProfile() {
@@ -41,11 +43,12 @@ export default function PerfilPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name')
+        .select('display_name, training_goal')
         .eq('id', user.id)
         .single()
 
       setDisplayName(profile?.display_name ?? '')
+      setTrainingGoal((profile?.training_goal as TrainingGoal) ?? 'general')
       setIsLoading(false)
     }
 
@@ -87,6 +90,24 @@ export default function PerfilPage() {
     setStoredFontSize(size)
     applyFontSize(size)
     setFontSize(size)
+  }
+
+  async function handleTrainingGoalChange(goal: TrainingGoal) {
+    setTrainingGoal(goal)
+
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ training_goal: goal })
+      .eq('id', user.id)
+
+    if (error) setMessage('No pudimos guardar el objetivo de entrenamiento.')
   }
 
   if (isLoading) {
@@ -149,6 +170,44 @@ export default function PerfilPage() {
                 onClick={() => handleFontSizeChange('xlarge')}
               >
                 Muy grande
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Objetivo de entrenamiento</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={trainingGoal === 'fuerza' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTrainingGoalChange('fuerza')}
+              >
+                Fuerza
+              </Button>
+              <Button
+                type="button"
+                variant={trainingGoal === 'hipertrofia' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTrainingGoalChange('hipertrofia')}
+              >
+                Hipertrofia
+              </Button>
+              <Button
+                type="button"
+                variant={trainingGoal === 'resistencia' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTrainingGoalChange('resistencia')}
+              >
+                Resistencia
+              </Button>
+              <Button
+                type="button"
+                variant={trainingGoal === 'general' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTrainingGoalChange('general')}
+              >
+                General
               </Button>
             </div>
           </div>
