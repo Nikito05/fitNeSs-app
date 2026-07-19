@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ExercisePicker } from '@/components/rutina/exercise-picker'
 import { PlannedSetsEditor } from '@/components/rutina/planned-sets-editor'
 import {
@@ -24,10 +25,11 @@ export default function EditarRutinaPage() {
 
   const [routine, setRoutine] = useState<Routine | null>(null)
   const [days, setDays] = useState<RoutineDay[]>([])
-  const [expandedDayId, setExpandedDayId] = useState<string | null>(null)
+  const [openDayId, setOpenDayId] = useState<string | null>(null)
   const [dayDetail, setDayDetail] = useState<RoutineDayDetail | null>(null)
+  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null)
   const [newDayName, setNewDayName] = useState('')
-  const [showPickerForDay, setShowPickerForDay] = useState<string | null>(null)
+  const [showPicker, setShowPicker] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,14 +61,20 @@ export default function EditarRutinaPage() {
     }
   }
 
-  async function handleExpandDay(dayId: string) {
-    if (expandedDayId === dayId) {
-      setExpandedDayId(null)
-      setDayDetail(null)
-      return
-    }
-    setExpandedDayId(dayId)
+  async function handleOpenDay(dayId: string) {
+    setOpenDayId(dayId)
+    setExpandedExerciseId(null)
+    setShowPicker(false)
     await loadDayDetail(dayId)
+  }
+
+  function handleSheetOpenChange(open: boolean) {
+    if (!open) {
+      setOpenDayId(null)
+      setDayDetail(null)
+      setExpandedExerciseId(null)
+      setShowPicker(false)
+    }
   }
 
   async function handleAddDay() {
@@ -88,8 +96,8 @@ export default function EditarRutinaPage() {
     setError(null)
     try {
       await deleteRoutineDay(dayId)
-      if (expandedDayId === dayId) {
-        setExpandedDayId(null)
+      if (openDayId === dayId) {
+        setOpenDayId(null)
         setDayDetail(null)
       }
       await loadRoutine()
@@ -98,22 +106,24 @@ export default function EditarRutinaPage() {
     }
   }
 
-  async function handleAddExercise(dayId: string, exerciseId: string) {
+  async function handleAddExercise(exerciseId: string) {
+    if (!openDayId) return
     setError(null)
     try {
-      await addExerciseToDay(dayId, exerciseId)
-      setShowPickerForDay(null)
-      await loadDayDetail(dayId)
+      await addExerciseToDay(openDayId, exerciseId)
+      setShowPicker(false)
+      await loadDayDetail(openDayId)
     } catch {
       setError('No pudimos agregar el ejercicio.')
     }
   }
 
-  async function handleRemoveExercise(dayId: string, routineDayExerciseId: string) {
+  async function handleRemoveExercise(routineDayExerciseId: string) {
+    if (!openDayId) return
     setError(null)
     try {
       await removeExerciseFromDay(routineDayExerciseId)
-      await loadDayDetail(dayId)
+      await loadDayDetail(openDayId)
     } catch {
       setError('No pudimos quitar el ejercicio.')
     }
@@ -135,6 +145,8 @@ export default function EditarRutinaPage() {
     )
   }
 
+  const openDay = days.find((day) => day.id === openDayId)
+
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="text-lg font-semibold">{routine.name}</h1>
@@ -154,67 +166,91 @@ export default function EditarRutinaPage() {
       <div className="flex flex-col gap-3">
         {days.map((day) => (
           <Card key={day.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-base">
-                <button type="button" onClick={() => handleExpandDay(day.id)} className="underline">
-                  {day.name}
-                </button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteDay(day.id)}
-                >
-                  Borrar día
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            {expandedDayId === day.id && dayDetail && (
-              <CardContent className="flex flex-col gap-3">
-                {dayDetail.exercises.map((exercise) => (
-                  <div key={exercise.id} className="rounded-md border p-3">
-                    <div className="flex items-center justify-between">
-                      <Link
-                        href={`/rutina/historial/${exercise.exerciseId}`}
-                        className="text-sm font-medium underline"
-                      >
-                        {exercise.exerciseName}
-                      </Link>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveExercise(day.id, exercise.id)}
-                      >
-                        Quitar
-                      </Button>
-                    </div>
-                    <PlannedSetsEditor
-                      routineDayExerciseId={exercise.id}
-                      initialSets={exercise.plannedSets}
-                      onSaved={() => loadDayDetail(day.id)}
-                    />
-                  </div>
-                ))}
-                {showPickerForDay === day.id ? (
-                  <ExercisePicker onSelect={(exercise) => handleAddExercise(day.id, exercise.id)} />
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowPickerForDay(day.id)}
-                  >
-                    Agregar ejercicio
-                  </Button>
-                )}
-              </CardContent>
-            )}
+            <button
+              type="button"
+              onClick={() => handleOpenDay(day.id)}
+              className="flex w-full items-center justify-between p-4 text-left"
+            >
+              <span className="font-medium">{day.name}</span>
+              <span className="text-sm text-muted-foreground">›</span>
+            </button>
           </Card>
         ))}
         {days.length === 0 && (
           <p className="text-sm text-muted-foreground">Todavía no agregaste ningún día.</p>
         )}
       </div>
+
+      <Sheet open={openDayId !== null} onOpenChange={handleSheetOpenChange}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{openDay?.name}</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-3 px-4 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Borrar este día</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => openDayId && handleDeleteDay(openDayId)}
+              >
+                Borrar día
+              </Button>
+            </div>
+
+            {dayDetail?.exercises.map((exercise) => (
+              <div key={exercise.id} className="rounded-md border">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedExerciseId((prev) => (prev === exercise.id ? null : exercise.id))
+                  }
+                  className="flex w-full items-center justify-between p-3 text-left"
+                >
+                  <span className="text-sm font-medium">{exercise.exerciseName}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {exercise.plannedSets.length} series
+                  </span>
+                </button>
+                {expandedExerciseId === exercise.id && (
+                  <div className="border-t p-3">
+                    <PlannedSetsEditor
+                      routineDayExerciseId={exercise.id}
+                      initialSets={exercise.plannedSets}
+                      onSaved={() => openDayId && loadDayDetail(openDayId)}
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <Link
+                        href={`/rutina/historial/${exercise.exerciseId}`}
+                        className="text-xs underline"
+                      >
+                        Ver historial
+                      </Link>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveExercise(exercise.id)}
+                      >
+                        Quitar ejercicio
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {showPicker ? (
+              <ExercisePicker onSelect={(exercise) => handleAddExercise(exercise.id)} />
+            ) : (
+              <Button type="button" variant="outline" onClick={() => setShowPicker(true)}>
+                Agregar ejercicio
+              </Button>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
