@@ -116,6 +116,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   {
     sessionId: string
     sessionDate: string
+    note: string | null
     sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
   }[]
 > {
@@ -131,11 +132,22 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
 
   if (setsError) throw setsError
 
+  const { data: notesData, error: notesError } = await supabase
+    .from('exercise_notes')
+    .select('note, workout_session_id, workout_sessions(session_date)')
+    .eq('exercise_id', exerciseId)
+
+  if (notesError) throw notesError
+
   const rows = setsData ?? []
 
   const sessionMap = new Map<
     string,
-    { sessionDate: string; sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[] }
+    {
+      sessionDate: string
+      note: string | null
+      sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
+    }
   >()
 
   for (const row of rows) {
@@ -152,11 +164,58 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
     if (existing) {
       existing.sets.push(set)
     } else {
-      sessionMap.set(row.workout_session_id, { sessionDate, sets: [set] })
+      sessionMap.set(row.workout_session_id, { sessionDate, note: null, sets: [set] })
+    }
+  }
+
+  for (const row of notesData ?? []) {
+    const sessionDate =
+      (row.workout_sessions as unknown as { session_date: string })?.session_date ?? ''
+    const existing = sessionMap.get(row.workout_session_id)
+
+    if (existing) {
+      existing.note = row.note
+    } else {
+      sessionMap.set(row.workout_session_id, { sessionDate, note: row.note, sets: [] })
     }
   }
 
   return Array.from(sessionMap.entries())
     .map(([sessionId, value]) => ({ sessionId, ...value }))
     .sort((a, b) => b.sessionDate.localeCompare(a.sessionDate))
+}
+
+export async function saveExerciseNote(input: {
+  workoutSessionId: string
+  exerciseId: string
+  note: string
+}): Promise<void> {
+  const supabase = createClient()
+
+  const { data: existing, error: findError } = await supabase
+    .from('exercise_notes')
+    .select('id')
+    .eq('workout_session_id', input.workoutSessionId)
+    .eq('exercise_id', input.exerciseId)
+    .maybeSingle()
+
+  if (findError) throw findError
+
+  if (existing) {
+    const { error } = await supabase
+      .from('exercise_notes')
+      .update({ note: input.note })
+      .eq('id', existing.id)
+
+    if (error) throw error
+    return
+  }
+
+  const { error } = await supabase.from('exercise_notes').insert({
+    workout_session_id: input.workoutSessionId,
+    exercise_id: input.exerciseId,
+    note: input.note,
+  })
+
+  if (error) throw error
 }

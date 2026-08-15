@@ -9,14 +9,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { getRoutineDayDetail } from '@/lib/rutina/routines-api'
 import {
   getOrCreateWorkoutSession,
   getLoggedSetsForSession,
   saveLoggedSet,
+  saveExerciseNote,
   listSessionsForExercise,
 } from '@/lib/rutina/sessions-api'
-import { flattenPlannedSets, findFirstUnsavedIndex, type FlatPlannedSet } from '@/lib/rutina/entrenar-flow'
+import {
+  flattenPlannedSets,
+  findFirstUnsavedIndex,
+  resolveInitialNote,
+  type FlatPlannedSet,
+} from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
 import {
   suggestProgressionForExercise,
@@ -51,6 +58,7 @@ export default function EntrenarPage() {
   const [logs, setLogs] = useState<Record<string, SetLogState>>({})
   const [lastByKey, setLastByKey] = useState<Record<string, LastValue>>({})
   const [suggestBySet, setSuggestBySet] = useState<Record<string, ProgressionSuggestion>>({})
+  const [notesByExercise, setNotesByExercise] = useState<Record<string, string>>({})
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -112,9 +120,11 @@ export default function EntrenarPage() {
 
         const lastValues: Record<string, LastValue> = {}
         const suggestions: Record<string, ProgressionSuggestion> = {}
+        const notes: Record<string, string> = {}
 
         uniqueExerciseIds.forEach((exerciseId, i) => {
-          const pastSessions = histories[i].filter((s) => s.sessionId !== session.id)
+          const allSessions = histories[i]
+          const pastSessions = allSessions.filter((s) => s.sessionId !== session.id)
           const mostRecent = pastSessions[0]
           if (mostRecent) {
             for (const set of mostRecent.sets) {
@@ -124,6 +134,14 @@ export default function EntrenarPage() {
               }
             }
           }
+
+          const currentSessionEntry = allSessions.find((s) => s.sessionId === session.id)
+          const hasCurrentSessionRow = currentSessionEntry !== undefined && currentSessionEntry.note !== null
+          notes[exerciseId] = resolveInitialNote(
+            currentSessionEntry?.note ?? undefined,
+            hasCurrentSessionRow,
+            mostRecent?.note ?? undefined
+          )
 
           const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
           const equipment: Equipment = exerciseDetail?.equipment ?? 'maquina'
@@ -149,6 +167,7 @@ export default function EntrenarPage() {
         setLogs(initialLogs)
         setLastByKey(lastValues)
         setSuggestBySet(suggestions)
+        setNotesByExercise(notes)
         setCurrentIndex(findFirstUnsavedIndex(flat, isSavedByKey))
       } catch {
         setError('No pudimos cargar el entrenamiento de hoy.')
@@ -194,6 +213,12 @@ export default function EntrenarPage() {
     }))
   }
 
+  function setNote(value: string) {
+    const current = flatSets[currentIndex]
+    if (!current) return
+    setNotesByExercise((prev) => ({ ...prev, [current.exerciseId]: value }))
+  }
+
   async function handleConfirm() {
     const current = flatSets[currentIndex]
     if (!current || !sessionId) return
@@ -211,6 +236,15 @@ export default function EntrenarPage() {
         actualWeight: log.actualWeight,
         rpe: log.rpe,
       })
+      try {
+        await saveExerciseNote({
+          workoutSessionId: sessionId,
+          exerciseId: current.exerciseId,
+          note: notesByExercise[current.exerciseId] ?? '',
+        })
+      } catch (noteError) {
+        console.error('No pudimos guardar la nota del ejercicio:', noteError)
+      }
       setLogs((prev) => ({ ...prev, [key]: { ...prev[key], isSaving: false, isSaved: true } }))
       setCurrentIndex((prev) => prev + 1)
     } catch {
@@ -365,6 +399,19 @@ export default function EntrenarPage() {
               Al límite
             </Button>
           </div>
+        </div>
+
+        <div className="w-full max-w-xs text-left">
+          <label htmlFor="exercise-note" className="mb-2 block text-sm text-muted-foreground">
+            Nota (opcional)
+          </label>
+          <Input
+            id="exercise-note"
+            type="text"
+            placeholder="ej. 'subir', 'polea lejos'..."
+            value={notesByExercise[current.exerciseId] ?? ''}
+            onChange={(e) => setNote(e.target.value)}
+          />
         </div>
       </div>
 

@@ -37,3 +37,13 @@ export function findFirstUnsavedIndex(
   )
   return index === -1 ? flatSets.length : index
 }
+
+export function resolveInitialNote(
+  currentSessionNote: string | undefined,
+  hasCurrentSessionRow: boolean,
+  mostRecentPastNote: string | undefined
+): string {
+  if (hasCurrentSessionRow) return currentSessionNote ?? ''
+  if (mostRecentPastNote && mostRecentPastNote.trim() !== '') return mostRecentPastNote
+  return ''
+}

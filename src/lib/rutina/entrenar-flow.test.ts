@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { flattenPlannedSets, findFirstUnsavedIndex } from './entrenar-flow'
+import { flattenPlannedSets, findFirstUnsavedIndex, resolveInitialNote } from './entrenar-flow'
 
 describe('flattenPlannedSets', () => {
   it('returns an empty array when there are no exercises', () => {
@@ -63,5 +63,28 @@ describe('findFirstUnsavedIndex', () => {
 
   it('returns 0 for an empty list of flat sets', () => {
     expect(findFirstUnsavedIndex([], {})).toBe(0)
+  })
+})
+
+describe('resolveInitialNote', () => {
+  it('usa el comentario de la sesión actual si ya existe una fila guardada, aunque esté vacío', () => {
+    expect(resolveInitialNote('', true, 'polea lejos')).toBe('')
+  })
+
+  it('usa el comentario de la sesión actual si existe y no está vacío', () => {
+    expect(resolveInitialNote('subir', true, 'polea lejos')).toBe('subir')
+  })
+
+  it('usa el comentario de la sesión pasada más reciente si no hay fila para la sesión actual', () => {
+    expect(resolveInitialNote(undefined, false, 'polea lejos')).toBe('polea lejos')
+  })
+
+  it('devuelve vacío si no hay fila actual ni comentario pasado', () => {
+    expect(resolveInitialNote(undefined, false, undefined)).toBe('')
+    expect(resolveInitialNote(undefined, false, '')).toBe('')
+  })
+
+  it('devuelve vacío si el comentario de la sesión pasada es solo espacios y no hay fila actual', () => {
+    expect(resolveInitialNote(undefined, false, '   ')).toBe('')
   })
 })
