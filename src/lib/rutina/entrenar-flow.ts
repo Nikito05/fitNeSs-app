@@ -47,3 +47,38 @@ export function resolveInitialNote(
   if (mostRecentPastNote && mostRecentPastNote.trim() !== '') return mostRecentPastNote
   return ''
 }
+
+export function filterSessionsForRoutineDay<T extends { routineDayId: string | null }>(
+  sessions: T[],
+  routineDayId: string
+): T[] {
+  return sessions.filter((session) => session.routineDayId === routineDayId)
+}
+
+export type RoutineDayGroup<T> = {
+  routineDayId: string | null
+  routineDayName: string
+  sessions: T[]
+}
+
+export function groupSessionsByRoutineDay<
+  T extends { routineDayId: string | null; routineDayName: string | null }
+>(sessions: T[]): RoutineDayGroup<T>[] {
+  const groups = new Map<string, RoutineDayGroup<T>>()
+
+  for (const session of sessions) {
+    const key = session.routineDayId ?? 'sin-dia'
+    const existing = groups.get(key)
+    if (existing) {
+      existing.sessions.push(session)
+    } else {
+      groups.set(key, {
+        routineDayId: session.routineDayId,
+        routineDayName: session.routineDayName ?? 'Otros registros',
+        sessions: [session],
+      })
+    }
+  }
+
+  return Array.from(groups.values())
+}
