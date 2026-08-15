@@ -116,7 +116,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   {
     sessionId: string
     sessionDate: string
-    note: string
+    note: string | null
     sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
   }[]
 > {
@@ -145,7 +145,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
     string,
     {
       sessionDate: string
-      note: string
+      note: string | null
       sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
     }
   >()
@@ -164,7 +164,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
     if (existing) {
       existing.sets.push(set)
     } else {
-      sessionMap.set(row.workout_session_id, { sessionDate, note: '', sets: [set] })
+      sessionMap.set(row.workout_session_id, { sessionDate, note: null, sets: [set] })
     }
   }
 

@@ -136,7 +136,12 @@ export default function EntrenarPage() {
           }
 
           const currentSessionEntry = allSessions.find((s) => s.sessionId === session.id)
-          notes[exerciseId] = resolveInitialNote(currentSessionEntry?.note, mostRecent?.note)
+          const hasCurrentSessionRow = currentSessionEntry !== undefined && currentSessionEntry.note !== null
+          notes[exerciseId] = resolveInitialNote(
+            currentSessionEntry?.note ?? undefined,
+            hasCurrentSessionRow,
+            mostRecent?.note ?? undefined
+          )
 
           const exerciseDetail = detail.exercises.find((e) => e.exerciseId === exerciseId)
           const equipment: Equipment = exerciseDetail?.equipment ?? 'maquina'
@@ -231,11 +236,15 @@ export default function EntrenarPage() {
         actualWeight: log.actualWeight,
         rpe: log.rpe,
       })
-      await saveExerciseNote({
-        workoutSessionId: sessionId,
-        exerciseId: current.exerciseId,
-        note: notesByExercise[current.exerciseId] ?? '',
-      })
+      try {
+        await saveExerciseNote({
+          workoutSessionId: sessionId,
+          exerciseId: current.exerciseId,
+          note: notesByExercise[current.exerciseId] ?? '',
+        })
+      } catch (noteError) {
+        console.error('No pudimos guardar la nota del ejercicio:', noteError)
+      }
       setLogs((prev) => ({ ...prev, [key]: { ...prev[key], isSaving: false, isSaved: true } }))
       setCurrentIndex((prev) => prev + 1)
     } catch {

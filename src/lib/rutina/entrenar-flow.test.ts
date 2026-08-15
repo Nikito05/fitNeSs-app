@@ -67,24 +67,24 @@ describe('findFirstUnsavedIndex', () => {
 })
 
 describe('resolveInitialNote', () => {
-  it('usa el comentario de la sesión actual si no está vacío', () => {
-    expect(resolveInitialNote('subir', 'polea lejos')).toBe('subir')
+  it('usa el comentario de la sesión actual si ya existe una fila guardada, aunque esté vacío', () => {
+    expect(resolveInitialNote('', true, 'polea lejos')).toBe('')
   })
 
-  it('usa el comentario de la sesión pasada más reciente si la actual está vacía', () => {
-    expect(resolveInitialNote('', 'polea lejos')).toBe('polea lejos')
+  it('usa el comentario de la sesión actual si existe y no está vacío', () => {
+    expect(resolveInitialNote('subir', true, 'polea lejos')).toBe('subir')
   })
 
-  it('usa el comentario de la sesión pasada más reciente si la actual no existe', () => {
-    expect(resolveInitialNote(undefined, 'polea lejos')).toBe('polea lejos')
+  it('usa el comentario de la sesión pasada más reciente si no hay fila para la sesión actual', () => {
+    expect(resolveInitialNote(undefined, false, 'polea lejos')).toBe('polea lejos')
   })
 
-  it('devuelve vacío si ninguna de las dos tiene comentario', () => {
-    expect(resolveInitialNote('', '')).toBe('')
-    expect(resolveInitialNote(undefined, undefined)).toBe('')
+  it('devuelve vacío si no hay fila actual ni comentario pasado', () => {
+    expect(resolveInitialNote(undefined, false, undefined)).toBe('')
+    expect(resolveInitialNote(undefined, false, '')).toBe('')
   })
 
-  it('devuelve vacío si el comentario de la sesión pasada es solo espacios', () => {
-    expect(resolveInitialNote(undefined, '   ')).toBe('')
+  it('devuelve vacío si el comentario de la sesión pasada es solo espacios y no hay fila actual', () => {
+    expect(resolveInitialNote(undefined, false, '   ')).toBe('')
   })
 })

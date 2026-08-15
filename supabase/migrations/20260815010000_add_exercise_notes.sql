@@ -1,10 +1,9 @@
-create table public.exercise_notes (
+create table if not exists public.exercise_notes (
   id uuid primary key default gen_random_uuid(),
   workout_session_id uuid not null references public.workout_sessions(id) on delete cascade,
   exercise_id uuid not null references public.exercises(id) on delete restrict,
   note text not null default '',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
   unique (workout_session_id, exercise_id)
 );
 

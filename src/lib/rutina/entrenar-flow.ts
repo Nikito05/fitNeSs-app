@@ -40,9 +40,10 @@ export function findFirstUnsavedIndex(
 
 export function resolveInitialNote(
   currentSessionNote: string | undefined,
+  hasCurrentSessionRow: boolean,
   mostRecentPastNote: string | undefined
 ): string {
-  if (currentSessionNote && currentSessionNote.trim() !== '') return currentSessionNote
+  if (hasCurrentSessionRow) return currentSessionNote ?? ''
   if (mostRecentPastNote && mostRecentPastNote.trim() !== '') return mostRecentPastNote
   return ''
 }
