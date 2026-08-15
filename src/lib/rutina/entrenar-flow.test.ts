@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { flattenPlannedSets, findFirstUnsavedIndex } from './entrenar-flow'
+import { flattenPlannedSets, findFirstUnsavedIndex, resolveInitialNote } from './entrenar-flow'
 
 describe('flattenPlannedSets', () => {
   it('returns an empty array when there are no exercises', () => {
@@ -63,5 +63,28 @@ describe('findFirstUnsavedIndex', () => {
 
   it('returns 0 for an empty list of flat sets', () => {
     expect(findFirstUnsavedIndex([], {})).toBe(0)
+  })
+})
+
+describe('resolveInitialNote', () => {
+  it('usa el comentario de la sesión actual si no está vacío', () => {
+    expect(resolveInitialNote('subir', 'polea lejos')).toBe('subir')
+  })
+
+  it('usa el comentario de la sesión pasada más reciente si la actual está vacía', () => {
+    expect(resolveInitialNote('', 'polea lejos')).toBe('polea lejos')
+  })
+
+  it('usa el comentario de la sesión pasada más reciente si la actual no existe', () => {
+    expect(resolveInitialNote(undefined, 'polea lejos')).toBe('polea lejos')
+  })
+
+  it('devuelve vacío si ninguna de las dos tiene comentario', () => {
+    expect(resolveInitialNote('', '')).toBe('')
+    expect(resolveInitialNote(undefined, undefined)).toBe('')
+  })
+
+  it('devuelve vacío si el comentario de la sesión pasada es solo espacios', () => {
+    expect(resolveInitialNote(undefined, '   ')).toBe('')
   })
 })
