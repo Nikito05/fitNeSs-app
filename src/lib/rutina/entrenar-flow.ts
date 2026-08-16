@@ -61,6 +61,12 @@ export type RoutineDayGroup<T> = {
   sessions: T[]
 }
 
+/**
+ * Agrupa sesiones por día de rutina. Asume que `sessions` ya viene ordenado
+ * descendente por sessionDate (la garantía que da listSessionsForExercise) —
+ * el orden de los grupos resultantes sale del orden de inserción en el Map,
+ * sin un sort adicional acá.
+ */
 export function groupSessionsByRoutineDay<
   T extends { routineDayId: string | null; routineDayName: string | null }
 >(sessions: T[]): RoutineDayGroup<T>[] {

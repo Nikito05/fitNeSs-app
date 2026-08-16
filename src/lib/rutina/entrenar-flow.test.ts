@@ -191,9 +191,9 @@ describe('groupSessionsByRoutineDay', () => {
 
   it('separa sesiones de días de rutina distintos en grupos distintos, preservando el orden de la entrada (más reciente primero)', () => {
     const sessions = [
-      { sessionId: 's1', routineDayId: 'dia-b', routineDayName: 'Tirón' },
-      { sessionId: 's2', routineDayId: 'dia-a', routineDayName: 'Empuje' },
-      { sessionId: 's3', routineDayId: 'dia-b', routineDayName: 'Tirón' },
+      { sessionId: 's1', sessionDate: '2026-08-14', routineDayId: 'dia-b', routineDayName: 'Tirón' },
+      { sessionId: 's2', sessionDate: '2026-08-13', routineDayId: 'dia-a', routineDayName: 'Empuje' },
+      { sessionId: 's3', sessionDate: '2026-08-10', routineDayId: 'dia-b', routineDayName: 'Tirón' },
     ]
     const result = groupSessionsByRoutineDay(sessions)
     expect(result).toHaveLength(2)

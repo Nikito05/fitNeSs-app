@@ -29,7 +29,7 @@ export function ExerciseProgressionChart({ data }: { data: ProgressionPoint[] })
           type="monotone"
           stroke="var(--color-volume)"
           strokeWidth={2}
-          dot={false}
+          dot={{ r: 3 }}
         />
       </LineChart>
     </ChartContainer>
