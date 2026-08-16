@@ -22,6 +22,7 @@ import {
   flattenPlannedSets,
   findFirstUnsavedIndex,
   resolveInitialNote,
+  filterSessionsForRoutineDay,
   type FlatPlannedSet,
 } from '@/lib/rutina/entrenar-flow'
 import type { RoutineDayDetail } from '@/lib/rutina/types'
@@ -124,7 +125,8 @@ export default function EntrenarPage() {
 
         uniqueExerciseIds.forEach((exerciseId, i) => {
           const allSessions = histories[i]
-          const pastSessions = allSessions.filter((s) => s.sessionId !== session.id)
+          const sessionsForThisDay = filterSessionsForRoutineDay(allSessions, dayId)
+          const pastSessions = sessionsForThisDay.filter((s) => s.sessionId !== session.id)
           const mostRecent = pastSessions[0]
           if (mostRecent) {
             for (const set of mostRecent.sets) {
@@ -135,7 +137,7 @@ export default function EntrenarPage() {
             }
           }
 
-          const currentSessionEntry = allSessions.find((s) => s.sessionId === session.id)
+          const currentSessionEntry = sessionsForThisDay.find((s) => s.sessionId === session.id)
           const hasCurrentSessionRow = currentSessionEntry !== undefined && currentSessionEntry.note !== null
           notes[exerciseId] = resolveInitialNote(
             currentSessionEntry?.note ?? undefined,

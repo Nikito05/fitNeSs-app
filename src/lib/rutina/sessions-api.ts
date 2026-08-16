@@ -116,6 +116,8 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   {
     sessionId: string
     sessionDate: string
+    routineDayId: string | null
+    routineDayName: string | null
     note: string | null
     sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
   }[]
@@ -125,7 +127,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
   const { data: setsData, error: setsError } = await supabase
     .from('logged_sets')
     .select(
-      'set_number, actual_reps, actual_weight, rpe, workout_session_id, workout_sessions(session_date)'
+      'set_number, actual_reps, actual_weight, rpe, workout_session_id, workout_sessions(session_date, routine_day_id, routine_days(name))'
     )
     .eq('exercise_id', exerciseId)
     .order('set_number')
@@ -134,7 +136,7 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
 
   const { data: notesData, error: notesError } = await supabase
     .from('exercise_notes')
-    .select('note, workout_session_id, workout_sessions(session_date)')
+    .select('note, workout_session_id, workout_sessions(session_date, routine_day_id, routine_days(name))')
     .eq('exercise_id', exerciseId)
 
   if (notesError) throw notesError
@@ -145,14 +147,22 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
     string,
     {
       sessionDate: string
+      routineDayId: string | null
+      routineDayName: string | null
       note: string | null
       sets: { setNumber: number; actualReps: number; actualWeight: number | null; rpe: Rpe }[]
     }
   >()
 
   for (const row of rows) {
-    const sessionDate =
-      (row.workout_sessions as unknown as { session_date: string })?.session_date ?? ''
+    const sessionMeta = row.workout_sessions as unknown as {
+      session_date: string
+      routine_day_id: string | null
+      routine_days: { name: string } | null
+    } | null
+    const sessionDate = sessionMeta?.session_date ?? ''
+    const routineDayId = sessionMeta?.routine_day_id ?? null
+    const routineDayName = sessionMeta?.routine_days?.name ?? null
     const existing = sessionMap.get(row.workout_session_id)
     const set = {
       setNumber: row.set_number,
@@ -164,19 +174,25 @@ export async function listSessionsForExercise(exerciseId: string): Promise<
     if (existing) {
       existing.sets.push(set)
     } else {
-      sessionMap.set(row.workout_session_id, { sessionDate, note: null, sets: [set] })
+      sessionMap.set(row.workout_session_id, { sessionDate, routineDayId, routineDayName, note: null, sets: [set] })
     }
   }
 
   for (const row of notesData ?? []) {
-    const sessionDate =
-      (row.workout_sessions as unknown as { session_date: string })?.session_date ?? ''
+    const sessionMeta = row.workout_sessions as unknown as {
+      session_date: string
+      routine_day_id: string | null
+      routine_days: { name: string } | null
+    } | null
+    const sessionDate = sessionMeta?.session_date ?? ''
+    const routineDayId = sessionMeta?.routine_day_id ?? null
+    const routineDayName = sessionMeta?.routine_days?.name ?? null
     const existing = sessionMap.get(row.workout_session_id)
 
     if (existing) {
       existing.note = row.note
     } else {
-      sessionMap.set(row.workout_session_id, { sessionDate, note: row.note, sets: [] })
+      sessionMap.set(row.workout_session_id, { sessionDate, routineDayId, routineDayName, note: row.note, sets: [] })
     }
   }
 
