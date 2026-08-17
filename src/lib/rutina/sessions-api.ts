@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { todayLocalDate } from '@/lib/date'
 import type { WorkoutSession, LoggedSet } from './types'
 import type { Rpe } from './progression-suggestion'
 
@@ -28,7 +29,7 @@ export async function getOrCreateWorkoutSession(routineDayId: string): Promise<W
 
   if (!user) throw new Error('No hay usuario autenticado.')
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocalDate()
 
   const { data: existing, error: findError } = await supabase
     .from('workout_sessions')

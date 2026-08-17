@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { todayLocalDate } from '@/lib/date'
 
 export type WeightLog = {
   id: string
@@ -14,7 +15,7 @@ export async function getTodayWeight(): Promise<WeightLog | null> {
 
   if (!user) throw new Error('No hay usuario autenticado.')
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocalDate()
 
   const { data, error } = await supabase
     .from('body_weight_logs')
@@ -37,7 +38,7 @@ export async function saveTodayWeight(weightKg: number): Promise<void> {
 
   if (!user) throw new Error('No hay usuario autenticado.')
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocalDate()
 
   const { data: existing, error: findError } = await supabase
     .from('body_weight_logs')

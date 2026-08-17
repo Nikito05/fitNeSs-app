@@ -27,7 +27,6 @@ export default function ProgresoPage() {
         } = await supabase.auth.getUser()
 
         if (!user) {
-          setIsLoading(false)
           return
         }
 
@@ -58,11 +57,18 @@ export default function ProgresoPage() {
     setIsSaving(true)
     try {
       await saveTodayWeight(parsed)
+    } catch {
+      setError('No pudimos guardar tu peso.')
+      setIsSaving(false)
+      return
+    }
+
+    try {
       const [today, weightHistory] = await Promise.all([getTodayWeight(), listWeightHistory()])
       setTodayLog(today)
       setHistory(weightHistory)
     } catch {
-      setError('No pudimos guardar tu peso.')
+      setError('Guardamos tu peso, pero no pudimos actualizar la pantalla. Recargá para verlo.')
     } finally {
       setIsSaving(false)
     }

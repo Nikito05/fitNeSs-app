@@ -1,8 +1,8 @@
-create table public.body_weight_logs (
+create table if not exists public.body_weight_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   log_date date not null default current_date,
-  weight_kg double precision not null,
+  weight_kg double precision not null check (weight_kg > 0 and weight_kg < 1000),
   created_at timestamptz not null default now(),
   unique (user_id, log_date)
 );
