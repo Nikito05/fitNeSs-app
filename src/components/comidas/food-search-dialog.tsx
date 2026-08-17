@@ -42,6 +42,7 @@ export function FoodSearchDialog({
   const [isSearchingOff, setIsSearchingOff] = useState(false)
   const [offError, setOffError] = useState<string | null>(null)
   const [barcodeNotFound, setBarcodeNotFound] = useState(false)
+  const [incompleteProductFound, setIncompleteProductFound] = useState(false)
   const [selected, setSelected] = useState<SelectedItem | null>(null)
   const [quantityG, setQuantityG] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -113,11 +114,16 @@ export function FoodSearchDialog({
   async function handleBarcodeDetected(barcode: string) {
     setView('search')
     setBarcodeNotFound(false)
+    setIncompleteProductFound(false)
     setOffError(null)
     try {
       const product = await getOffProductByBarcode(barcode)
       if (!product) {
         setBarcodeNotFound(true)
+        return
+      }
+      if (!mapOffProductToPer100g(product)) {
+        setIncompleteProductFound(true)
         return
       }
       selectOffProduct(product)
@@ -221,6 +227,13 @@ export function FoodSearchDialog({
         <p className="text-sm text-amber-600">
           No encontramos ese producto en Open Food Facts. Probá buscarlo por texto o cargalo como alimento
           propio.
+        </p>
+      )}
+
+      {incompleteProductFound && (
+        <p className="text-sm text-amber-600">
+          Este producto no tiene datos nutricionales completos en Open Food Facts. Probá cargarlo como
+          alimento propio.
         </p>
       )}
 
