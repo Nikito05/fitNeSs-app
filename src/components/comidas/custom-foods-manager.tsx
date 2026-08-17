@@ -48,8 +48,12 @@ export function CustomFoodsManager({ onSelect }: { onSelect: (food: CustomFood) 
   }
 
   async function handleDeactivate(id: string) {
-    await deactivateCustomFood(id)
-    await reload()
+    try {
+      await deactivateCustomFood(id)
+      await reload()
+    } catch {
+      setError('No pudimos borrar el alimento.')
+    }
   }
 
   if (isCreating) {
