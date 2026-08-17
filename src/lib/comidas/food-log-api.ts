@@ -116,6 +116,11 @@ export async function updateFoodLogEntryQuantity(
   macros: MacroAmounts
 ): Promise<void> {
   const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('No hay usuario autenticado.')
 
   const { error } = await supabase
     .from('food_log_entries')
@@ -127,17 +132,24 @@ export async function updateFoodLogEntryQuantity(
       carbs_g: macros.carbsG,
     })
     .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) throw error
 }
 
 export async function deleteFoodLogEntry(id: string): Promise<void> {
   const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('No hay usuario autenticado.')
 
   const { error } = await supabase
     .from('food_log_entries')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) throw error
 }

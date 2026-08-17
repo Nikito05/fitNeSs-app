@@ -92,6 +92,11 @@ export async function createCustomFood(input: CustomFoodInput): Promise<CustomFo
 
 export async function updateCustomFood(id: string, input: CustomFoodInput): Promise<void> {
   const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('No hay usuario autenticado.')
 
   const { error } = await supabase
     .from('foods')
@@ -104,17 +109,24 @@ export async function updateCustomFood(id: string, input: CustomFoodInput): Prom
       typical_portion_g: input.typicalPortionG,
     })
     .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) throw error
 }
 
 export async function deactivateCustomFood(id: string): Promise<void> {
   const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('No hay usuario autenticado.')
 
   const { error } = await supabase
     .from('foods')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) throw error
 }
