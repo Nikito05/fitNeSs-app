@@ -13,7 +13,9 @@ import {
   setStoredFontSize,
   type FontSize,
 } from '@/lib/font-size'
+import { todayLocalDate } from '@/lib/date'
 import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
+import type { BiologicalSex, ActivityLevel, WeightGoal } from '@/lib/macros/goal-calculation'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -25,6 +27,16 @@ export default function PerfilPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<FontSize>('normal')
   const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('general')
+  const [heightCm, setHeightCm] = useState('')
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex | null>(null)
+  const [birthDate, setBirthDate] = useState('')
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(null)
+  const [weightGoal, setWeightGoal] = useState<WeightGoal>('mantener')
+  const [targetWeightKg, setTargetWeightKg] = useState('')
+  const [targetDate, setTargetDate] = useState('')
+  const [isSavingSex, setIsSavingSex] = useState(false)
+  const [isSavingActivity, setIsSavingActivity] = useState(false)
+  const [isSavingWeightGoal, setIsSavingWeightGoal] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -44,12 +56,21 @@ export default function PerfilPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, training_goal')
+        .select(
+          'display_name, training_goal, height_cm, biological_sex, birth_date, activity_level, weight_goal, target_weight_kg, target_date'
+        )
         .eq('id', user.id)
         .single()
 
       setDisplayName(profile?.display_name ?? '')
       setTrainingGoal((profile?.training_goal as TrainingGoal) ?? 'general')
+      setHeightCm(profile?.height_cm != null ? String(profile.height_cm) : '')
+      setBiologicalSex((profile?.biological_sex as BiologicalSex) ?? null)
+      setBirthDate(profile?.birth_date ?? '')
+      setActivityLevel((profile?.activity_level as ActivityLevel) ?? null)
+      setWeightGoal((profile?.weight_goal as WeightGoal) ?? 'mantener')
+      setTargetWeightKg(profile?.target_weight_kg != null ? String(profile.target_weight_kg) : '')
+      setTargetDate(profile?.target_date ?? '')
       setIsLoading(false)
     }
 
@@ -73,7 +94,13 @@ export default function PerfilPage() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: displayName })
+      .update({
+        display_name: displayName,
+        height_cm: heightCm ? Number(heightCm) : null,
+        birth_date: birthDate || null,
+        target_weight_kg: targetWeightKg ? Number(targetWeightKg) : null,
+        target_date: targetDate || null,
+      })
       .eq('id', user.id)
 
     setIsSaving(false)
@@ -93,10 +120,13 @@ export default function PerfilPage() {
     setFontSize(size)
   }
 
-  async function handleTrainingGoalChange(goal: TrainingGoal) {
+  async function saveProfileField(
+    patch: Record<string, unknown>,
+    errorMessage: string,
+    setIsSavingField: (value: boolean) => void
+  ) {
     setMessage(null)
-    setTrainingGoal(goal)
-    setIsSavingGoal(true)
+    setIsSavingField(true)
 
     try {
       const supabase = createClient()
@@ -106,15 +136,49 @@ export default function PerfilPage() {
 
       if (!user) return
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ training_goal: goal })
-        .eq('id', user.id)
+      const { error } = await supabase.from('profiles').update(patch).eq('id', user.id)
 
-      if (error) setMessage('No pudimos guardar el objetivo de entrenamiento.')
+      if (error) setMessage(errorMessage)
     } finally {
-      setIsSavingGoal(false)
+      setIsSavingField(false)
     }
+  }
+
+  async function handleTrainingGoalChange(goal: TrainingGoal) {
+    setTrainingGoal(goal)
+    await saveProfileField(
+      { training_goal: goal },
+      'No pudimos guardar el objetivo de entrenamiento.',
+      setIsSavingGoal
+    )
+  }
+
+  async function handleBiologicalSexChange(sex: BiologicalSex) {
+    setBiologicalSex(sex)
+    await saveProfileField({ biological_sex: sex }, 'No pudimos guardar el sexo biológico.', setIsSavingSex)
+  }
+
+  async function handleActivityLevelChange(level: ActivityLevel) {
+    setActivityLevel(level)
+    await saveProfileField(
+      { activity_level: level },
+      'No pudimos guardar el nivel de actividad.',
+      setIsSavingActivity
+    )
+  }
+
+  async function handleWeightGoalChange(goal: WeightGoal) {
+    setWeightGoal(goal)
+
+    const patch: Record<string, unknown> = { weight_goal: goal }
+    if (goal === 'mantener') {
+      setTargetWeightKg('')
+      setTargetDate('')
+      patch.target_weight_kg = null
+      patch.target_date = null
+    }
+
+    await saveProfileField(patch, 'No pudimos guardar el objetivo de peso.', setIsSavingWeightGoal)
   }
 
   if (isLoading) {
@@ -143,6 +207,25 @@ export default function PerfilPage() {
                 id="displayName"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="heightCm">Altura (cm)</Label>
+              <Input
+                id="heightCm"
+                type="number"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="birthDate">Fecha de nacimiento</Label>
+              <Input
+                id="birthDate"
+                type="date"
+                max={todayLocalDate()}
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
               />
             </div>
             {message && <p className="text-sm text-muted-foreground">{message}</p>}
@@ -221,6 +304,136 @@ export default function PerfilPage() {
                 General
               </Button>
             </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Sexo biológico</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={biologicalSex === 'masculino' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingSex}
+                onClick={() => handleBiologicalSexChange('masculino')}
+              >
+                Masculino
+              </Button>
+              <Button
+                type="button"
+                variant={biologicalSex === 'femenino' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingSex}
+                onClick={() => handleBiologicalSexChange('femenino')}
+              >
+                Femenino
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Nivel de actividad</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={activityLevel === 'sedentario' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingActivity}
+                onClick={() => handleActivityLevelChange('sedentario')}
+              >
+                Sedentario
+              </Button>
+              <Button
+                type="button"
+                variant={activityLevel === 'ligero' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingActivity}
+                onClick={() => handleActivityLevelChange('ligero')}
+              >
+                Ligero
+              </Button>
+              <Button
+                type="button"
+                variant={activityLevel === 'moderado' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingActivity}
+                onClick={() => handleActivityLevelChange('moderado')}
+              >
+                Moderado
+              </Button>
+              <Button
+                type="button"
+                variant={activityLevel === 'intenso' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingActivity}
+                onClick={() => handleActivityLevelChange('intenso')}
+              >
+                Intenso
+              </Button>
+              <Button
+                type="button"
+                variant={activityLevel === 'muy_intenso' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingActivity}
+                onClick={() => handleActivityLevelChange('muy_intenso')}
+              >
+                Muy intenso
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Objetivo de peso</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={weightGoal === 'bajar' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingWeightGoal}
+                onClick={() => handleWeightGoalChange('bajar')}
+              >
+                Bajar
+              </Button>
+              <Button
+                type="button"
+                variant={weightGoal === 'mantener' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingWeightGoal}
+                onClick={() => handleWeightGoalChange('mantener')}
+              >
+                Mantener
+              </Button>
+              <Button
+                type="button"
+                variant={weightGoal === 'subir' ? 'default' : 'outline'}
+                size="sm"
+                disabled={isSavingWeightGoal}
+                onClick={() => handleWeightGoalChange('subir')}
+              >
+                Subir
+              </Button>
+            </div>
+            {weightGoal !== 'mantener' && (
+              <div className="mt-2 flex flex-col gap-2">
+                <Label htmlFor="targetWeightKg">Peso objetivo (kg) — opcional</Label>
+                <Input
+                  id="targetWeightKg"
+                  type="number"
+                  step="0.1"
+                  value={targetWeightKg}
+                  onChange={(e) => setTargetWeightKg(e.target.value)}
+                />
+                <Label htmlFor="targetDate">Fecha objetivo — opcional</Label>
+                <Input
+                  id="targetDate"
+                  type="date"
+                  value={targetDate}
+                  onChange={(e) => setTargetDate(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  El peso y la fecha objetivo se guardan al tocar &quot;Guardar cambios&quot; arriba.
+                </p>
+              </div>
+            )}
           </div>
 
           <Button variant="outline" className="mt-6 w-full" onClick={handleLogout}>
