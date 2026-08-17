@@ -13,6 +13,7 @@ import {
   setStoredFontSize,
   type FontSize,
 } from '@/lib/font-size'
+import { todayLocalDate } from '@/lib/date'
 import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
 import type { BiologicalSex, ActivityLevel, WeightGoal } from '@/lib/macros/goal-calculation'
 
@@ -33,7 +34,9 @@ export default function PerfilPage() {
   const [weightGoal, setWeightGoal] = useState<WeightGoal>('mantener')
   const [targetWeightKg, setTargetWeightKg] = useState('')
   const [targetDate, setTargetDate] = useState('')
-  const [isSavingMacroField, setIsSavingMacroField] = useState(false)
+  const [isSavingSex, setIsSavingSex] = useState(false)
+  const [isSavingActivity, setIsSavingActivity] = useState(false)
+  const [isSavingWeightGoal, setIsSavingWeightGoal] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -117,10 +120,13 @@ export default function PerfilPage() {
     setFontSize(size)
   }
 
-  async function handleTrainingGoalChange(goal: TrainingGoal) {
+  async function saveProfileField(
+    patch: Record<string, unknown>,
+    errorMessage: string,
+    setIsSavingField: (value: boolean) => void
+  ) {
     setMessage(null)
-    setTrainingGoal(goal)
-    setIsSavingGoal(true)
+    setIsSavingField(true)
 
     try {
       const supabase = createClient()
@@ -130,78 +136,49 @@ export default function PerfilPage() {
 
       if (!user) return
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ training_goal: goal })
-        .eq('id', user.id)
+      const { error } = await supabase.from('profiles').update(patch).eq('id', user.id)
 
-      if (error) setMessage('No pudimos guardar el objetivo de entrenamiento.')
+      if (error) setMessage(errorMessage)
     } finally {
-      setIsSavingGoal(false)
+      setIsSavingField(false)
     }
+  }
+
+  async function handleTrainingGoalChange(goal: TrainingGoal) {
+    setTrainingGoal(goal)
+    await saveProfileField(
+      { training_goal: goal },
+      'No pudimos guardar el objetivo de entrenamiento.',
+      setIsSavingGoal
+    )
   }
 
   async function handleBiologicalSexChange(sex: BiologicalSex) {
-    setMessage(null)
     setBiologicalSex(sex)
-    setIsSavingMacroField(true)
-
-    try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) return
-
-      const { error } = await supabase.from('profiles').update({ biological_sex: sex }).eq('id', user.id)
-
-      if (error) setMessage('No pudimos guardar el sexo biológico.')
-    } finally {
-      setIsSavingMacroField(false)
-    }
+    await saveProfileField({ biological_sex: sex }, 'No pudimos guardar el sexo biológico.', setIsSavingSex)
   }
 
   async function handleActivityLevelChange(level: ActivityLevel) {
-    setMessage(null)
     setActivityLevel(level)
-    setIsSavingMacroField(true)
-
-    try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) return
-
-      const { error } = await supabase.from('profiles').update({ activity_level: level }).eq('id', user.id)
-
-      if (error) setMessage('No pudimos guardar el nivel de actividad.')
-    } finally {
-      setIsSavingMacroField(false)
-    }
+    await saveProfileField(
+      { activity_level: level },
+      'No pudimos guardar el nivel de actividad.',
+      setIsSavingActivity
+    )
   }
 
   async function handleWeightGoalChange(goal: WeightGoal) {
-    setMessage(null)
     setWeightGoal(goal)
-    setIsSavingMacroField(true)
 
-    try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) return
-
-      const { error } = await supabase.from('profiles').update({ weight_goal: goal }).eq('id', user.id)
-
-      if (error) setMessage('No pudimos guardar el objetivo de peso.')
-    } finally {
-      setIsSavingMacroField(false)
+    const patch: Record<string, unknown> = { weight_goal: goal }
+    if (goal === 'mantener') {
+      setTargetWeightKg('')
+      setTargetDate('')
+      patch.target_weight_kg = null
+      patch.target_date = null
     }
+
+    await saveProfileField(patch, 'No pudimos guardar el objetivo de peso.', setIsSavingWeightGoal)
   }
 
   if (isLoading) {
@@ -246,6 +223,7 @@ export default function PerfilPage() {
               <Input
                 id="birthDate"
                 type="date"
+                max={todayLocalDate()}
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
               />
@@ -335,7 +313,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={biologicalSex === 'masculino' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingSex}
                 onClick={() => handleBiologicalSexChange('masculino')}
               >
                 Masculino
@@ -344,7 +322,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={biologicalSex === 'femenino' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingSex}
                 onClick={() => handleBiologicalSexChange('femenino')}
               >
                 Femenino
@@ -359,7 +337,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={activityLevel === 'sedentario' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingActivity}
                 onClick={() => handleActivityLevelChange('sedentario')}
               >
                 Sedentario
@@ -368,7 +346,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={activityLevel === 'ligero' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingActivity}
                 onClick={() => handleActivityLevelChange('ligero')}
               >
                 Ligero
@@ -377,7 +355,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={activityLevel === 'moderado' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingActivity}
                 onClick={() => handleActivityLevelChange('moderado')}
               >
                 Moderado
@@ -386,7 +364,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={activityLevel === 'intenso' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingActivity}
                 onClick={() => handleActivityLevelChange('intenso')}
               >
                 Intenso
@@ -395,7 +373,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={activityLevel === 'muy_intenso' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingActivity}
                 onClick={() => handleActivityLevelChange('muy_intenso')}
               >
                 Muy intenso
@@ -410,7 +388,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={weightGoal === 'bajar' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingWeightGoal}
                 onClick={() => handleWeightGoalChange('bajar')}
               >
                 Bajar
@@ -419,7 +397,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={weightGoal === 'mantener' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingWeightGoal}
                 onClick={() => handleWeightGoalChange('mantener')}
               >
                 Mantener
@@ -428,7 +406,7 @@ export default function PerfilPage() {
                 type="button"
                 variant={weightGoal === 'subir' ? 'default' : 'outline'}
                 size="sm"
-                disabled={isSavingMacroField}
+                disabled={isSavingWeightGoal}
                 onClick={() => handleWeightGoalChange('subir')}
               >
                 Subir

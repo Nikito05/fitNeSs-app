@@ -11,12 +11,14 @@ import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
 
 export default function MacrosPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [missingFields, setMissingFields] = useState<string[]>([])
   const [goal, setGoal] = useState<DailyGoal | null>(null)
 
   useEffect(() => {
     async function init() {
       setIsLoading(true)
+      setLoadError(false)
       try {
         const supabase = createClient()
         const {
@@ -28,7 +30,7 @@ export default function MacrosPage() {
           return
         }
 
-        const [{ data: profile }, weightHistory] = await Promise.all([
+        const [{ data: profile, error: profileError }, weightHistory] = await Promise.all([
           supabase
             .from('profiles')
             .select('height_cm, biological_sex, birth_date, activity_level, weight_goal, target_weight_kg, target_date, training_goal')
@@ -36,6 +38,8 @@ export default function MacrosPage() {
             .single(),
           listWeightHistory(),
         ])
+
+        if (profileError) throw profileError
 
         const missing: string[] = []
         if (!profile?.height_cm) missing.push('altura')
@@ -65,6 +69,8 @@ export default function MacrosPage() {
         })
 
         setGoal(dailyGoal)
+      } catch {
+        setLoadError(true)
       } finally {
         setIsLoading(false)
       }
@@ -81,15 +87,26 @@ export default function MacrosPage() {
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-4">
+        <p className="text-sm text-red-600">No pudimos cargar tus datos. Probá de nuevo más tarde.</p>
+      </div>
+    )
+  }
+
   if (missingFields.length > 0) {
+    const missingProfileFields = missingFields.some((field) => field !== 'un registro de peso corporal')
+    const missingWeightLog = missingFields.includes('un registro de peso corporal')
+
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4 text-center">
         <p className="text-sm text-muted-foreground">
           Para calcular tu meta diaria falta: {missingFields.join(', ')}.
         </p>
         <div className="flex gap-4 text-sm underline">
-          <Link href="/perfil">Completar perfil</Link>
-          <Link href="/progreso">Cargar peso</Link>
+          {missingProfileFields && <Link href="/perfil">Completar perfil</Link>}
+          {missingWeightLog && <Link href="/progreso">Cargar peso</Link>}
         </div>
       </div>
     )

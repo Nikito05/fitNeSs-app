@@ -24,7 +24,7 @@ describe('calculateAge', () => {
 
 describe('calculateBMR', () => {
   it('hombre', () => {
-    expect(calculateBMR('masculino', 80, 180, 30)).toBe(1780)
+    expect(calculateBMR('masculino', 80, 180, 30)).toBeCloseTo(1780, 2)
   })
 
   it('mujer', () => {
@@ -172,5 +172,48 @@ describe('calculateDailyGoal', () => {
     // Si el piso no se respetara, carbsG saldría bien distinto (calculado sobre 986.8, no 1239).
     expect(result.macros.carbsG).toBeCloseTo(136.31, 2)
     expect(result.warning).toBeNull()
+  })
+
+  it('camino feliz: no cappea el piso cuando TDEE + ajuste ya supera el BMR', () => {
+    const result = calculateDailyGoal({
+      sex: 'masculino',
+      weightKg: 80,
+      heightCm: 180,
+      birthDate: '1996-01-01',
+      activityLevel: 'moderado',
+      weightGoal: 'mantener',
+      targetWeightKg: null,
+      targetDate: null,
+      trainingGoal: 'fuerza',
+      today: '2026-08-17',
+    })
+
+    // BMR = 10*80 + 6.25*180 - 5*30 + 5 = 1780. TDEE = 1780*1.55 = 2759.
+    // mantener → ajuste 0 → goalCalories = 2759, muy por encima del BMR (piso no se activa).
+    expect(result.bmr).toBeCloseTo(1780, 2)
+    expect(result.tdee).toBeCloseTo(2759, 2)
+    expect(result.goalCalories).toBeCloseTo(2759, 2)
+    expect(result.warning).toBeNull()
+  })
+
+  it('propaga el warning de calculateCalorieAdjustment hasta el resultado final', () => {
+    const result = calculateDailyGoal({
+      sex: 'masculino',
+      weightKg: 80,
+      heightCm: 180,
+      birthDate: '1996-01-01',
+      activityLevel: 'muy_intenso',
+      weightGoal: 'bajar',
+      targetWeightKg: 60,
+      targetDate: '2026-03-12',
+      trainingGoal: 'general',
+      today: '2026-01-01',
+    })
+
+    // BMR = 1780. TDEE = 1780*1.9 = 3382. Ritmo pedido (80→60kg en 70 días) excede
+    // el máximo de 1kg/semana → se cappea a -1100 kcal/día, con warning.
+    // goalCalories = 3382 - 1100 = 2282, por encima del BMR (el warning se prueba solo, sin piso de por medio).
+    expect(result.goalCalories).toBeCloseTo(2282, 2)
+    expect(result.warning).not.toBeNull()
   })
 })
