@@ -18,6 +18,7 @@ export function BarcodeScanner({
     const codeReader = new BrowserMultiFormatReader()
     let controls: IScannerControls | null = null
     let detected = false
+    let cancelled = false
 
     codeReader
       .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
@@ -28,6 +29,10 @@ export function BarcodeScanner({
         }
       })
       .then((startedControls) => {
+        if (cancelled) {
+          startedControls.stop()
+          return
+        }
         controls = startedControls
       })
       .catch(() => {
@@ -35,6 +40,7 @@ export function BarcodeScanner({
       })
 
     return () => {
+      cancelled = true
       controls?.stop()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
