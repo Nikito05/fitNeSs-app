@@ -131,8 +131,12 @@ export default function MacrosPage() {
   }
 
   async function handleDeleteEntry(id: string) {
-    await deleteFoodLogEntry(id)
-    await loadEntries()
+    try {
+      await deleteFoodLogEntry(id)
+      await loadEntries()
+    } catch {
+      setEntriesError(true)
+    }
   }
 
   function startEdit(entry: FoodLogEntry) {
@@ -149,9 +153,14 @@ export default function MacrosPage() {
       entry.quantityG
     )
     const newMacros = scaleToQuantity(per100g, newQuantity)
-    await updateFoodLogEntryQuantity(entry.id, newQuantity, newMacros)
-    setEditingEntryId(null)
-    await loadEntries()
+
+    try {
+      await updateFoodLogEntryQuantity(entry.id, newQuantity, newMacros)
+      setEditingEntryId(null)
+      await loadEntries()
+    } catch {
+      setEntriesError(true)
+    }
   }
 
   if (isLoading) {
