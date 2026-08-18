@@ -1,19 +1,44 @@
 'use client'
 
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { listWeightHistory } from '@/lib/progreso/weight-api'
-import { todayLocalDate } from '@/lib/date'
-import { calculateDailyGoal, type DailyGoal, type BiologicalSex, type ActivityLevel, type WeightGoal } from '@/lib/macros/goal-calculation'
+import { todayLocalDate, shiftLocalDate } from '@/lib/date'
+import {
+  calculateDailyGoal,
+  type DailyGoal,
+  type BiologicalSex,
+  type ActivityLevel,
+  type WeightGoal,
+} from '@/lib/macros/goal-calculation'
 import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
+import {
+  listFoodLogForDate,
+  updateFoodLogEntryQuantity,
+  deleteFoodLogEntry,
+  type FoodLogEntry,
+} from '@/lib/comidas/food-log-api'
+import { sumDailyTotals, calculateRemaining, deriveImpliedPer100g, scaleToQuantity } from '@/lib/comidas/food-calculation'
+import { FoodSearchDialog } from '@/components/comidas/food-search-dialog'
 
 export default function MacrosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [missingFields, setMissingFields] = useState<string[]>([])
   const [goal, setGoal] = useState<DailyGoal | null>(null)
+
+  const [selectedDate, setSelectedDate] = useState(todayLocalDate())
+  const [entries, setEntries] = useState<FoodLogEntry[]>([])
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true)
+  const [entriesError, setEntriesError] = useState(false)
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const [editQuantity, setEditQuantity] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -33,7 +58,9 @@ export default function MacrosPage() {
         const [{ data: profile, error: profileError }, weightHistory] = await Promise.all([
           supabase
             .from('profiles')
-            .select('height_cm, biological_sex, birth_date, activity_level, weight_goal, target_weight_kg, target_date, training_goal')
+            .select(
+              'height_cm, biological_sex, birth_date, activity_level, weight_goal, target_weight_kg, target_date, training_goal'
+            )
             .eq('id', user.id)
             .single(),
           listWeightHistory(),
@@ -79,6 +106,54 @@ export default function MacrosPage() {
     init()
   }, [])
 
+  const loadEntries = useCallback(async () => {
+    setIsLoadingEntries(true)
+    setEntriesError(false)
+    try {
+      setEntries(await listFoodLogForDate(selectedDate))
+    } catch {
+      setEntriesError(true)
+    } finally {
+      setIsLoadingEntries(false)
+    }
+  }, [selectedDate])
+
+  useEffect(() => {
+    loadEntries()
+  }, [loadEntries])
+
+  function handlePrevDay() {
+    setSelectedDate((date) => shiftLocalDate(date, -1))
+  }
+
+  function handleNextDay() {
+    setSelectedDate((date) => shiftLocalDate(date, 1))
+  }
+
+  async function handleDeleteEntry(id: string) {
+    await deleteFoodLogEntry(id)
+    await loadEntries()
+  }
+
+  function startEdit(entry: FoodLogEntry) {
+    setEditingEntryId(entry.id)
+    setEditQuantity(String(entry.quantityG))
+  }
+
+  async function confirmEdit(entry: FoodLogEntry) {
+    const newQuantity = Number(editQuantity)
+    if (!newQuantity || newQuantity <= 0) return
+
+    const per100g = deriveImpliedPer100g(
+      { calories: entry.calories, proteinG: entry.proteinG, fatG: entry.fatG, carbsG: entry.carbsG },
+      entry.quantityG
+    )
+    const newMacros = scaleToQuantity(per100g, newQuantity)
+    await updateFoodLogEntryQuantity(entry.id, newQuantity, newMacros)
+    setEditingEntryId(null)
+    await loadEntries()
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
@@ -120,6 +195,25 @@ export default function MacrosPage() {
     )
   }
 
+  const consumed = sumDailyTotals(
+    entries.map((entry) => ({
+      calories: entry.calories,
+      proteinG: entry.proteinG,
+      fatG: entry.fatG,
+      carbsG: entry.carbsG,
+    }))
+  )
+
+  const remaining = calculateRemaining(
+    {
+      calories: goal.goalCalories,
+      proteinG: goal.macros.proteinG,
+      fatG: goal.macros.fatG,
+      carbsG: goal.macros.carbsG,
+    },
+    consumed
+  )
+
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="text-lg font-semibold">Macros</h1>
@@ -148,6 +242,119 @@ export default function MacrosPage() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-between">
+        <Button type="button" variant="outline" size="sm" onClick={handlePrevDay}>
+          ← Día anterior
+        </Button>
+        <p className="text-sm font-medium">{selectedDate}</p>
+        <Button type="button" variant="outline" size="sm" onClick={handleNextDay}>
+          Día siguiente →
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Consumido ese día</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          {entriesError ? (
+            <p className="text-sm text-red-600">No pudimos cargar los alimentos de este día.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-1 text-sm">
+              <p>
+                Calorías: {Math.round(consumed.calories)} / {Math.round(goal.goalCalories)} (restan{' '}
+                {Math.round(remaining.calories)})
+              </p>
+              <p>
+                Proteína: {Math.round(consumed.proteinG)}g / {Math.round(goal.macros.proteinG)}g (restan{' '}
+                {Math.round(remaining.proteinG)}g)
+              </p>
+              <p>
+                Grasa: {Math.round(consumed.fatG)}g / {Math.round(goal.macros.fatG)}g (restan{' '}
+                {Math.round(remaining.fatG)}g)
+              </p>
+              <p>
+                Carbohidratos: {Math.round(consumed.carbsG)}g / {Math.round(goal.macros.carbsG)}g (restan{' '}
+                {Math.round(remaining.carbsG)}g)
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Alimentos del día</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          {isLoadingEntries ? (
+            <p className="text-sm text-muted-foreground">Cargando...</p>
+          ) : entries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Todavía no cargaste nada este día.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {entries.map((entry) => (
+                <li key={entry.id} className="flex flex-col gap-1 border-b pb-2 text-sm last:border-b-0">
+                  {editingEntryId === entry.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        step="1"
+                        value={editQuantity}
+                        onChange={(e) => setEditQuantity(e.target.value)}
+                        className="w-24"
+                      />
+                      <Button type="button" size="sm" onClick={() => confirmEdit(entry)}>
+                        Guardar
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setEditingEntryId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{entry.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.quantityG}g · {Math.round(entry.calories)} kcal
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="button" size="sm" variant="outline" onClick={() => startEdit(entry)}>
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteEntry(entry.id)}
+                        >
+                          Borrar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button type="button" onClick={() => setIsAddOpen(true)}>
+            Agregar alimento
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Agregar alimento</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 p-4">
+            <FoodSearchDialog logDate={selectedDate} onClose={() => setIsAddOpen(false)} onAdded={loadEntries} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
