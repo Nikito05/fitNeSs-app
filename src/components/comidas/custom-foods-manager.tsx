@@ -21,6 +21,7 @@ export function CustomFoodsManager({ onSelect }: { onSelect: (food: CustomFood) 
 
   async function reload() {
     setIsLoading(true)
+    setError(null)
     try {
       setFoods(await listCustomFoods())
     } catch {
@@ -31,7 +32,19 @@ export function CustomFoodsManager({ onSelect }: { onSelect: (food: CustomFood) 
   }
 
   useEffect(() => {
-    reload()
+    async function loadInitialFoods() {
+      setIsLoading(true)
+      setError(null)
+      try {
+        setFoods(await listCustomFoods())
+      } catch {
+        setError('No pudimos cargar tus alimentos.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialFoods()
   }, [])
 
   async function handleCreate(input: CustomFoodInput) {

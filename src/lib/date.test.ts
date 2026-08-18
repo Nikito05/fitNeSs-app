@@ -17,4 +17,12 @@ describe('shiftLocalDate', () => {
   it('cruza de año hacia atrás', () => {
     expect(shiftLocalDate('2026-01-01', -1)).toBe('2025-12-31')
   })
+
+  it('cruza de mes hacia atrás', () => {
+    expect(shiftLocalDate('2026-09-01', -1)).toBe('2026-08-31')
+  })
+
+  it('respeta año bisiesto', () => {
+    expect(shiftLocalDate('2028-02-28', 1)).toBe('2028-02-29')
+  })
 })

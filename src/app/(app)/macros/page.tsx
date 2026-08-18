@@ -39,6 +39,7 @@ export default function MacrosPage() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editQuantity, setEditQuantity] = useState('')
+  const [mutationError, setMutationError] = useState<string | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -112,6 +113,7 @@ export default function MacrosPage() {
     try {
       setEntries(await listFoodLogForDate(selectedDate))
     } catch {
+      setEntries([])
       setEntriesError(true)
     } finally {
       setIsLoadingEntries(false)
@@ -119,6 +121,7 @@ export default function MacrosPage() {
   }, [selectedDate])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadEntries se reutiliza fuera del efecto (handleDeleteEntry, confirmEdit), no es un caso anidable sin duplicar código
     loadEntries()
   }, [loadEntries])
 
@@ -131,15 +134,17 @@ export default function MacrosPage() {
   }
 
   async function handleDeleteEntry(id: string) {
+    setMutationError(null)
     try {
       await deleteFoodLogEntry(id)
       await loadEntries()
     } catch {
-      setEntriesError(true)
+      setMutationError('No pudimos borrar el alimento.')
     }
   }
 
   function startEdit(entry: FoodLogEntry) {
+    setMutationError(null)
     setEditingEntryId(entry.id)
     setEditQuantity(String(entry.quantityG))
   }
@@ -147,6 +152,8 @@ export default function MacrosPage() {
   async function confirmEdit(entry: FoodLogEntry) {
     const newQuantity = Number(editQuantity)
     if (!newQuantity || newQuantity <= 0) return
+
+    setMutationError(null)
 
     const per100g = deriveImpliedPer100g(
       { calories: entry.calories, proteinG: entry.proteinG, fatG: entry.fatG, carbsG: entry.carbsG },
@@ -159,7 +166,7 @@ export default function MacrosPage() {
       setEditingEntryId(null)
       await loadEntries()
     } catch {
-      setEntriesError(true)
+      setMutationError('No pudimos guardar el cambio.')
     }
   }
 
@@ -297,6 +304,7 @@ export default function MacrosPage() {
           <CardTitle className="text-base">Alimentos del día</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
+          {mutationError && <p className="text-sm text-red-600">{mutationError}</p>}
           {isLoadingEntries ? (
             <p className="text-sm text-muted-foreground">Cargando...</p>
           ) : entries.length === 0 ? (

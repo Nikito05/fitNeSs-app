@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +38,7 @@ export function FoodSearchDialog({
   const [view, setView] = useState<'search' | 'manage' | 'scan' | 'quantity'>('search')
   const [query, setQuery] = useState('')
   const [customFoods, setCustomFoods] = useState<CustomFood[]>([])
+  const [customFoodsError, setCustomFoodsError] = useState(false)
   const [offResults, setOffResults] = useState<OffProduct[]>([])
   const [isSearchingOff, setIsSearchingOff] = useState(false)
   const [offError, setOffError] = useState<string | null>(null)
@@ -47,26 +48,55 @@ export function FoodSearchDialog({
   const [quantityG, setQuantityG] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const latestQueryRef = useRef(query)
 
   useEffect(() => {
-    listCustomFoods()
-      .then(setCustomFoods)
-      .catch(() => {})
+    latestQueryRef.current = query
+  }, [query])
+
+  useEffect(() => {
+    async function loadCustomFoods() {
+      try {
+        setCustomFoods(await listCustomFoods())
+      } catch {
+        setCustomFoodsError(true)
+      }
+    }
+
+    loadCustomFoods()
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- este efecto sincroniza los resultados con `query`/`view`; resetear el estado acá (en vez de derivarlo en el render) es la sincronización que el efecto existe para hacer
+    setBarcodeNotFound(false)
+    setIncompleteProductFound(false)
+
     if (view !== 'search' || query.trim() === '') {
       setOffResults([])
+      setIsSearchingOff(false)
       return
     }
 
     setIsSearchingOff(true)
     setOffError(null)
+    const searchedQuery = query
     const timeout = setTimeout(() => {
-      searchOffProductsByText(query)
-        .then(setOffResults)
-        .catch(() => setOffError('No pudimos buscar en Open Food Facts.'))
-        .finally(() => setIsSearchingOff(false))
+      searchOffProductsByText(searchedQuery)
+        .then((result) => {
+          if (searchedQuery === latestQueryRef.current) {
+            setOffResults(result)
+          }
+        })
+        .catch(() => {
+          if (searchedQuery === latestQueryRef.current) {
+            setOffError('No pudimos buscar en Open Food Facts.')
+          }
+        })
+        .finally(() => {
+          if (searchedQuery === latestQueryRef.current) {
+            setIsSearchingOff(false)
+          }
+        })
     }, 400)
 
     return () => clearTimeout(timeout)
@@ -237,6 +267,10 @@ export function FoodSearchDialog({
         </p>
       )}
 
+      {customFoodsError && (
+        <p className="text-sm text-red-600">No pudimos cargar tus alimentos propios.</p>
+      )}
+
       {filteredCustomFoods.length > 0 && (
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted-foreground">Mis alimentos</p>
@@ -259,11 +293,11 @@ export function FoodSearchDialog({
       {offResults.length > 0 && (
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted-foreground">Open Food Facts</p>
-          {offResults.map((product) => {
+          {offResults.map((product, index) => {
             const per100g = mapOffProductToPer100g(product)
             return (
               <button
-                key={product.code}
+                key={`${product.code}-${index}`}
                 type="button"
                 disabled={!per100g}
                 className="text-left text-sm underline disabled:text-muted-foreground disabled:no-underline"
@@ -274,6 +308,12 @@ export function FoodSearchDialog({
               </button>
             )
           })}
+          {offResults.some((product) => !mapOffProductToPer100g(product)) && (
+            <p className="text-sm text-amber-600">
+              Algunos resultados no tienen datos nutricionales completos — para esos, probá cargarlos como
+              alimento propio.
+            </p>
+          )}
         </div>
       )}
 

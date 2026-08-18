@@ -3,11 +3,27 @@ import type { OffProduct } from './food-calculation'
 const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl'
 const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
 
+type OffApiNutriments = {
+  'energy-kcal_100g'?: number | string
+  proteins_100g?: number | string
+  fat_100g?: number | string
+  carbohydrates_100g?: number | string
+}
+
 type OffApiProduct = {
   code?: string
   product_name?: string
-  nutriments?: OffProduct['nutriments']
+  nutriments?: OffApiNutriments
   serving_quantity?: number | string
+}
+
+function normalizeNutrientValue(value: number | string | undefined): number | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string' && value !== '') {
+    const parsed = Number(value)
+    return Number.isNaN(parsed) ? undefined : parsed
+  }
+  return undefined
 }
 
 function mapApiProduct(raw: OffApiProduct): OffProduct {
@@ -22,7 +38,12 @@ function mapApiProduct(raw: OffApiProduct): OffProduct {
   return {
     code: raw.code ?? '',
     productName: raw.product_name ?? null,
-    nutriments: raw.nutriments ?? {},
+    nutriments: {
+      'energy-kcal_100g': normalizeNutrientValue(raw.nutriments?.['energy-kcal_100g']),
+      proteins_100g: normalizeNutrientValue(raw.nutriments?.proteins_100g),
+      fat_100g: normalizeNutrientValue(raw.nutriments?.fat_100g),
+      carbohydrates_100g: normalizeNutrientValue(raw.nutriments?.carbohydrates_100g),
+    },
     servingQuantity,
   }
 }
