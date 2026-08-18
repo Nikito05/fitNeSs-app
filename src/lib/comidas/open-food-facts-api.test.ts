@@ -42,6 +42,78 @@ describe('searchOffProductsByText', () => {
     ])
   })
 
+  it('normaliza un nutriente que llega como string numérico válido', async () => {
+    const fixture = {
+      products: [
+        {
+          code: '1111111111111',
+          product_name: 'Leche descremada',
+          nutriments: {
+            'energy-kcal_100g': 35,
+            proteins_100g: '3.5',
+            fat_100g: 0.1,
+            carbohydrates_100g: 5,
+          },
+          serving_quantity: 250,
+        },
+      ],
+    }
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(fixture) }))
+
+    const result = await searchOffProductsByText('leche')
+
+    expect(result).toEqual([
+      {
+        code: '1111111111111',
+        productName: 'Leche descremada',
+        nutriments: {
+          'energy-kcal_100g': 35,
+          proteins_100g: 3.5,
+          fat_100g: 0.1,
+          carbohydrates_100g: 5,
+        },
+        servingQuantity: 250,
+      },
+    ])
+  })
+
+  it('normaliza a undefined un nutriente que llega como string no numérico', async () => {
+    const fixture = {
+      products: [
+        {
+          code: '2222222222222',
+          product_name: 'Producto con dato faltante',
+          nutriments: {
+            'energy-kcal_100g': 120,
+            proteins_100g: 'N/A',
+            fat_100g: 4,
+            carbohydrates_100g: 10,
+          },
+          serving_quantity: 100,
+        },
+      ],
+    }
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(fixture) }))
+
+    const result = await searchOffProductsByText('producto raro')
+
+    expect(result).toEqual([
+      {
+        code: '2222222222222',
+        productName: 'Producto con dato faltante',
+        nutriments: {
+          'energy-kcal_100g': 120,
+          proteins_100g: undefined,
+          fat_100g: 4,
+          carbohydrates_100g: 10,
+        },
+        servingQuantity: 100,
+      },
+    ])
+  })
+
   it('devuelve lista vacía si la respuesta no trae "products"', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) }))
 

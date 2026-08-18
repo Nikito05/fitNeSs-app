@@ -110,6 +110,7 @@ export default function MacrosPage() {
   const loadEntries = useCallback(async () => {
     setIsLoadingEntries(true)
     setEntriesError(false)
+    setMutationError(null)
     try {
       setEntries(await listFoodLogForDate(selectedDate))
     } catch {
@@ -307,7 +308,7 @@ export default function MacrosPage() {
           {mutationError && <p className="text-sm text-red-600">{mutationError}</p>}
           {isLoadingEntries ? (
             <p className="text-sm text-muted-foreground">Cargando...</p>
-          ) : entries.length === 0 ? (
+          ) : !entriesError && entries.length === 0 ? (
             <p className="text-sm text-muted-foreground">Todavía no cargaste nada este día.</p>
           ) : (
             <ul className="flex flex-col gap-2">
