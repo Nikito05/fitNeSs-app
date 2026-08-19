@@ -13,6 +13,7 @@ import {
   setStoredFontSize,
   type FontSize,
 } from '@/lib/font-size'
+import { applyTheme, getStoredTheme, setStoredTheme, type Theme } from '@/lib/theme'
 import { todayLocalDate } from '@/lib/date'
 import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
 import type { BiologicalSex, ActivityLevel, WeightGoal } from '@/lib/macros/goal-calculation'
@@ -26,6 +27,7 @@ export default function PerfilPage() {
   const [isSavingGoal, setIsSavingGoal] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState<FontSize>('normal')
+  const [theme, setTheme] = useState<Theme>('system')
   const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>('general')
   const [heightCm, setHeightCm] = useState('')
   const [biologicalSex, setBiologicalSex] = useState<BiologicalSex | null>(null)
@@ -46,6 +48,7 @@ export default function PerfilPage() {
       } = await supabase.auth.getUser()
 
       setFontSize(getStoredFontSize())
+      setTheme(getStoredTheme())
 
       if (!user) {
         setIsLoading(false)
@@ -118,6 +121,12 @@ export default function PerfilPage() {
     setStoredFontSize(size)
     applyFontSize(size)
     setFontSize(size)
+  }
+
+  function handleThemeChange(value: Theme) {
+    setStoredTheme(value)
+    applyTheme(value)
+    setTheme(value)
   }
 
   async function saveProfileField(
@@ -260,6 +269,36 @@ export default function PerfilPage() {
                 onClick={() => handleFontSizeChange('xlarge')}
               >
                 Muy grande
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <Label>Apariencia</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={theme === 'light' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleThemeChange('light')}
+              >
+                Claro
+              </Button>
+              <Button
+                type="button"
+                variant={theme === 'dark' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleThemeChange('dark')}
+              >
+                Oscuro
+              </Button>
+              <Button
+                type="button"
+                variant={theme === 'system' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleThemeChange('system')}
+              >
+                Sistema
               </Button>
             </div>
           </div>
