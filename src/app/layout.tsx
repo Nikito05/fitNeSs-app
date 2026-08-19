@@ -49,6 +49,9 @@ export const viewport: Viewport = {
   themeColor: "#111111",
 };
 
+// Duplica a propósito la lógica de resolveTheme/getStoredTheme de src/lib/theme.ts —
+// corre antes de que cualquier módulo de la app esté disponible. Ver spec:
+// docs/superpowers/specs/2026-08-19-selector-de-tema-design.md
 const themeInitScript = `
 (function() {
   try {
@@ -70,6 +73,7 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${fontDisplay.variable} ${fontBody.variable} ${fontNumeric.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

@@ -85,7 +85,7 @@ export function CustomFoodsManager({ onSelect }: { onSelect: (food: CustomFood) 
 
   return (
     <div className="flex flex-col gap-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : (

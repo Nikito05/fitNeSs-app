@@ -230,7 +230,7 @@ export function FoodSearchDialog({
             <span className="font-numeric">{Math.round(preview.carbsG)}g</span>
           </p>
         )}
-        {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+        {saveError && <p className="text-sm text-destructive">{saveError}</p>}
         <div className="flex gap-2">
           <Button type="button" disabled={isSaving} onClick={handleConfirmQuantity}>
             {isSaving ? 'Guardando...' : 'Agregar'}
@@ -270,7 +270,7 @@ export function FoodSearchDialog({
       )}
 
       {customFoodsError && (
-        <p className="text-sm text-red-600">No pudimos cargar tus alimentos propios.</p>
+        <p className="text-sm text-destructive">No pudimos cargar tus alimentos propios.</p>
       )}
 
       {filteredCustomFoods.length > 0 && (
@@ -290,7 +290,7 @@ export function FoodSearchDialog({
       )}
 
       {isSearchingOff && <p className="text-sm text-muted-foreground">Buscando en Open Food Facts...</p>}
-      {offError && <p className="text-sm text-red-600">{offError}</p>}
+      {offError && <p className="text-sm text-destructive">{offError}</p>}
 
       {offResults.length > 0 && (
         <div className="flex flex-col gap-1">

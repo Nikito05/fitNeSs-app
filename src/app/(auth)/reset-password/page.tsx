@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Guardando...' : 'Guardar contraseña'}
             </Button>

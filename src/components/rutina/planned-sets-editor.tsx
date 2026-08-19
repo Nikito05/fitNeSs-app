@@ -70,7 +70,7 @@ export function PlannedSetsEditor({
 
   return (
     <div className="mt-2 flex flex-col gap-2">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {sets.map((set, index) => (
         <div key={index} className="flex items-center gap-2">
           <span className="w-14 text-xs text-muted-foreground">Serie {set.setNumber}</span>

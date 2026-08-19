@@ -89,7 +89,7 @@ export function ExercisePicker({ onSelect }: { onSelect: (exercise: Exercise) =>
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
         {filtered.map((exercise) => (
           <li key={exercise.id}>

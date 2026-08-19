@@ -266,7 +266,7 @@ export default function EntrenarPage() {
   if (!dayDetail) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
@@ -311,7 +311,7 @@ export default function EntrenarPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-6 p-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <DropdownMenu>
         <DropdownMenuTrigger className="self-center rounded-md border px-3 py-1.5 text-sm text-muted-foreground">

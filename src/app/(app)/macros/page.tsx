@@ -182,7 +182,7 @@ export default function MacrosPage() {
   if (loadError) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
-        <p className="text-sm text-red-600">No pudimos cargar tus datos. Probá de nuevo más tarde.</p>
+        <p className="text-sm text-destructive">No pudimos cargar tus datos. Probá de nuevo más tarde.</p>
       </div>
     )
   }
@@ -207,7 +207,7 @@ export default function MacrosPage() {
   if (!goal) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
-        <p className="text-sm text-red-600">No pudimos calcular tu meta diaria.</p>
+        <p className="text-sm text-destructive">No pudimos calcular tu meta diaria.</p>
       </div>
     )
   }
@@ -276,7 +276,7 @@ export default function MacrosPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {entriesError ? (
-            <p className="text-sm text-red-600">No pudimos cargar los alimentos de este día.</p>
+            <p className="text-sm text-destructive">No pudimos cargar los alimentos de este día.</p>
           ) : (
             <div className="grid grid-cols-1 gap-1 text-sm">
               <p>
@@ -309,7 +309,7 @@ export default function MacrosPage() {
           <CardTitle className="text-base">Alimentos del día</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          {mutationError && <p className="text-sm text-red-600">{mutationError}</p>}
+          {mutationError && <p className="text-sm text-destructive">{mutationError}</p>}
           {isLoadingEntries ? (
             <p className="text-sm text-muted-foreground">Cargando...</p>
           ) : !entriesError && entries.length === 0 ? (
