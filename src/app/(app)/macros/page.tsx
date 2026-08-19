@@ -233,7 +233,7 @@ export default function MacrosPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">Macros</h1>
+      <h1 className="font-display text-xl">Macros</h1>
 
       {goal.warning && <p className="text-sm text-amber-600">{goal.warning}</p>}
 
@@ -242,19 +242,19 @@ export default function MacrosPage() {
           <CardTitle className="text-base">Meta diaria</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          <p className="text-2xl font-semibold">{Math.round(goal.goalCalories)} kcal</p>
+          <p className="font-numeric text-2xl">{Math.round(goal.goalCalories)} kcal</p>
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div>
               <p className="text-muted-foreground">Proteína</p>
-              <p className="font-medium">{Math.round(goal.macros.proteinG)}g</p>
+              <p className="font-numeric">{Math.round(goal.macros.proteinG)}g</p>
             </div>
             <div>
               <p className="text-muted-foreground">Grasa</p>
-              <p className="font-medium">{Math.round(goal.macros.fatG)}g</p>
+              <p className="font-numeric">{Math.round(goal.macros.fatG)}g</p>
             </div>
             <div>
               <p className="text-muted-foreground">Carbohidratos</p>
-              <p className="font-medium">{Math.round(goal.macros.carbsG)}g</p>
+              <p className="font-numeric">{Math.round(goal.macros.carbsG)}g</p>
             </div>
           </div>
         </CardContent>
@@ -280,20 +280,24 @@ export default function MacrosPage() {
           ) : (
             <div className="grid grid-cols-1 gap-1 text-sm">
               <p>
-                Calorías: {Math.round(consumed.calories)} / {Math.round(goal.goalCalories)} (restan{' '}
-                {Math.round(remaining.calories)})
+                Calorías: <span className="font-numeric">{Math.round(consumed.calories)}</span> /{' '}
+                <span className="font-numeric">{Math.round(goal.goalCalories)}</span> (restan{' '}
+                <span className="font-numeric">{Math.round(remaining.calories)}</span>)
               </p>
               <p>
-                Proteína: {Math.round(consumed.proteinG)}g / {Math.round(goal.macros.proteinG)}g (restan{' '}
-                {Math.round(remaining.proteinG)}g)
+                Proteína: <span className="font-numeric">{Math.round(consumed.proteinG)}g</span> /{' '}
+                <span className="font-numeric">{Math.round(goal.macros.proteinG)}g</span> (restan{' '}
+                <span className="font-numeric">{Math.round(remaining.proteinG)}g</span>)
               </p>
               <p>
-                Grasa: {Math.round(consumed.fatG)}g / {Math.round(goal.macros.fatG)}g (restan{' '}
-                {Math.round(remaining.fatG)}g)
+                Grasa: <span className="font-numeric">{Math.round(consumed.fatG)}g</span> /{' '}
+                <span className="font-numeric">{Math.round(goal.macros.fatG)}g</span> (restan{' '}
+                <span className="font-numeric">{Math.round(remaining.fatG)}g</span>)
               </p>
               <p>
-                Carbohidratos: {Math.round(consumed.carbsG)}g / {Math.round(goal.macros.carbsG)}g (restan{' '}
-                {Math.round(remaining.carbsG)}g)
+                Carbohidratos: <span className="font-numeric">{Math.round(consumed.carbsG)}g</span> /{' '}
+                <span className="font-numeric">{Math.round(goal.macros.carbsG)}g</span> (restan{' '}
+                <span className="font-numeric">{Math.round(remaining.carbsG)}g</span>)
               </p>
             </div>
           )}
