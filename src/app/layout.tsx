@@ -11,7 +11,7 @@ const fontDisplay = Bebas_Neue({
 });
 
 const fontBody = Roboto({
-  variable: "--font-body",
+  variable: "--font-roboto",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
 });

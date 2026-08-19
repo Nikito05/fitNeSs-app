@@ -224,8 +224,10 @@ export function FoodSearchDialog({
         </div>
         {preview && (
           <p className="text-sm text-muted-foreground">
-            {Math.round(preview.calories)} kcal · P {Math.round(preview.proteinG)}g · G{' '}
-            {Math.round(preview.fatG)}g · C {Math.round(preview.carbsG)}g
+            <span className="font-numeric">{Math.round(preview.calories)} kcal</span> · P{' '}
+            <span className="font-numeric">{Math.round(preview.proteinG)}g</span> · G{' '}
+            <span className="font-numeric">{Math.round(preview.fatG)}g</span> · C{' '}
+            <span className="font-numeric">{Math.round(preview.carbsG)}g</span>
           </p>
         )}
         {saveError && <p className="text-sm text-red-600">{saveError}</p>}
