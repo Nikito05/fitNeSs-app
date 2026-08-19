@@ -6,6 +6,7 @@ import {
   calculateRemaining,
   mapOffProductToPer100g,
   extractOffServingGrams,
+  calculateMacroProgress,
 } from './food-calculation'
 
 describe('scaleToQuantity', () => {
@@ -128,5 +129,49 @@ describe('extractOffServingGrams', () => {
   it('servingQuantity 0 (no positivo): devuelve null', () => {
     const product = { code: '123', productName: 'X', nutriments: {}, servingQuantity: 0 }
     expect(extractOffServingGrams(product)).toBeNull()
+  })
+})
+
+describe('calculateMacroProgress', () => {
+  it('en progreso: percent = porcentaje real, isComplete false, sin exceso', () => {
+    const result = calculateMacroProgress(85, 100)
+    expect(result.percent).toBeCloseTo(85, 2)
+    expect(result.isComplete).toBe(false)
+    expect(result.excess).toBe(0)
+  })
+
+  it('exactamente en la meta: percent 100, isComplete true, sin exceso', () => {
+    const result = calculateMacroProgress(100, 100)
+    expect(result.percent).toBe(100)
+    expect(result.isComplete).toBe(true)
+    expect(result.excess).toBe(0)
+  })
+
+  it('superada: percent capeado a 100, isComplete true, excess = lo que se pasó', () => {
+    const result = calculateMacroProgress(112, 100)
+    expect(result.percent).toBe(100)
+    expect(result.isComplete).toBe(true)
+    expect(result.excess).toBeCloseTo(12, 2)
+  })
+
+  it('consumido en cero: percent 0, isComplete false, sin exceso', () => {
+    const result = calculateMacroProgress(0, 100)
+    expect(result.percent).toBe(0)
+    expect(result.isComplete).toBe(false)
+    expect(result.excess).toBe(0)
+  })
+
+  it('meta en cero, consumido positivo (defensivo): percent 100, isComplete true', () => {
+    const result = calculateMacroProgress(50, 0)
+    expect(result.percent).toBe(100)
+    expect(result.isComplete).toBe(true)
+    expect(result.excess).toBe(0)
+  })
+
+  it('meta en cero, consumido en cero (defensivo): percent 0, isComplete false', () => {
+    const result = calculateMacroProgress(0, 0)
+    expect(result.percent).toBe(0)
+    expect(result.isComplete).toBe(false)
+    expect(result.excess).toBe(0)
   })
 })
