@@ -30,7 +30,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "fitNeSs",
-  description: "Rutina de gimnasio, progreso, macros y sueño en un solo lugar.",
+  description: "Rutina de gimnasio, progreso y macros en un solo lugar.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

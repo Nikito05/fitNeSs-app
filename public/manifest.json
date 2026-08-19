@@ -1,7 +1,7 @@
 {
   "name": "fitNeSs",
   "short_name": "fitNeSs",
-  "description": "Rutina de gimnasio, progreso, macros y sueño en un solo lugar.",
+  "description": "Rutina de gimnasio, progreso y macros en un solo lugar.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
