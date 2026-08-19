@@ -22,7 +22,14 @@ type ProgressBarProps = VariantProps<typeof progressBarVariants> & {
 
 export function ProgressBar({ percent, tone = "default", size, className }: ProgressBarProps) {
   return (
-    <div data-slot="progress-bar" className={cn(progressBarVariants({ size }), className)}>
+    <div
+      data-slot="progress-bar"
+      role="progressbar"
+      aria-valuenow={Math.round(percent)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={cn(progressBarVariants({ size }), className)}
+    >
       <div
         data-slot="progress-bar-fill"
         className={cn(

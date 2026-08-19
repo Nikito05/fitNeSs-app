@@ -1,4 +1,4 @@
-import { Flame, Beef, Wheat, Droplet } from "lucide-react"
+import { Flame, Beef, Wheat, Droplet, type LucideIcon } from "lucide-react"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { calculateMacroProgress } from "@/lib/comidas/food-calculation"
 import type { MacroAmounts } from "@/lib/comidas/food-calculation"
@@ -11,8 +11,8 @@ type MacroProgressProps = {
 function ExcessBadge({ excess, unit }: { excess: number; unit: string }) {
   if (excess <= 0) return null
   return (
-    <span className="rounded-full bg-green-600/15 px-1.5 py-0.5 font-body text-[0.65rem] font-medium text-green-600 dark:bg-green-500/15 dark:text-green-500">
-      +{Math.round(excess)}
+    <span className="rounded-full bg-green-600/15 px-1.5 py-0.5 font-body text-[0.65rem] font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">
+      +<span className="font-numeric">{Math.round(excess)}</span>
       {unit}
     </span>
   )
@@ -25,7 +25,7 @@ function MacroRow({
   goalValue,
   unit,
 }: {
-  icon: typeof Beef
+  icon: LucideIcon
   label: string
   consumedValue: number
   goalValue: number
@@ -35,8 +35,8 @@ function MacroRow({
 
   return (
     <div className="grid grid-cols-[20px_auto_1fr_auto] items-center gap-2.5">
-      <Icon className="size-[18px] text-muted-foreground" />
-      <span className="whitespace-nowrap text-sm font-medium">{label}</span>
+      <Icon className="size-[18px] text-muted-foreground" aria-hidden="true" />
+      <span className="min-w-0 truncate text-sm font-medium">{label}</span>
       <ProgressBar percent={progress.percent} tone={progress.isComplete ? "success" : "default"} size="sm" />
       <span className="flex items-center gap-1.5 whitespace-nowrap text-right text-xs">
         <ExcessBadge excess={progress.excess} unit={unit} />
@@ -55,7 +55,7 @@ export function MacroProgress({ consumed, goal }: MacroProgressProps) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <Flame className="size-[22px]" />
+          <Flame className="size-[22px]" aria-hidden="true" />
           <span className="font-body text-[0.95rem] font-medium">Calorías</span>
         </div>
         <div className="flex items-baseline gap-1">
@@ -69,7 +69,7 @@ export function MacroProgress({ consumed, goal }: MacroProgressProps) {
           size="lg"
         />
         <p className="font-body text-sm text-muted-foreground">
-          {calorieProgress.isComplete ? (
+          {Math.round(calorieProgress.excess) > 0 ? (
             <>Superaste tu meta por <span className="font-numeric">{Math.round(calorieProgress.excess)}</span> kcal</>
           ) : (
             <>Restan <span className="font-numeric">{Math.round(remainingCalories)}</span> kcal</>

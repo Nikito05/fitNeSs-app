@@ -240,11 +240,16 @@ export default function MacrosPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Hoy</CardTitle>
+          <CardTitle className="text-base">{selectedDate === todayLocalDate() ? 'Hoy' : selectedDate}</CardTitle>
         </CardHeader>
         <CardContent>
           {entriesError ? (
-            <p className="text-sm text-destructive">No pudimos cargar los alimentos de este día.</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-destructive">No pudimos cargar los alimentos de este día.</p>
+              <p className="text-sm text-muted-foreground">
+                Meta: <span className="font-numeric">{Math.round(goal.goalCalories)}</span> kcal
+              </p>
+            </div>
           ) : (
             <MacroProgress
               consumed={consumed}

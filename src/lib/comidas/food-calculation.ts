@@ -91,13 +91,13 @@ export function extractOffServingGrams(product: OffProduct): number | null {
   return product.servingQuantity != null && product.servingQuantity > 0 ? product.servingQuantity : null
 }
 
-export type MacroProgress = {
+export type MacroProgressResult = {
   percent: number
   isComplete: boolean
   excess: number
 }
 
-export function calculateMacroProgress(consumedValue: number, goalValue: number): MacroProgress {
+export function calculateMacroProgress(consumedValue: number, goalValue: number): MacroProgressResult {
   if (goalValue <= 0) {
     return { percent: consumedValue > 0 ? 100 : 0, isComplete: consumedValue > 0, excess: 0 }
   }
