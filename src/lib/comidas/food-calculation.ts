@@ -90,3 +90,23 @@ export function mapOffProductToPer100g(product: OffProduct): MacroAmountsPer100g
 export function extractOffServingGrams(product: OffProduct): number | null {
   return product.servingQuantity != null && product.servingQuantity > 0 ? product.servingQuantity : null
 }
+
+export type MacroProgressResult = {
+  percent: number
+  isComplete: boolean
+  excess: number
+}
+
+export function calculateMacroProgress(consumedValue: number, goalValue: number): MacroProgressResult {
+  if (goalValue <= 0) {
+    return { percent: consumedValue > 0 ? 100 : 0, isComplete: consumedValue > 0, excess: 0 }
+  }
+
+  const rawPercent = (consumedValue / goalValue) * 100
+
+  return {
+    percent: Math.min(100, Math.max(0, rawPercent)),
+    isComplete: consumedValue >= goalValue,
+    excess: Math.max(0, consumedValue - goalValue),
+  }
+}

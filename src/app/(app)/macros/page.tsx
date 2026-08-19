@@ -23,8 +23,9 @@ import {
   deleteFoodLogEntry,
   type FoodLogEntry,
 } from '@/lib/comidas/food-log-api'
-import { sumDailyTotals, calculateRemaining, deriveImpliedPer100g, scaleToQuantity } from '@/lib/comidas/food-calculation'
+import { sumDailyTotals, deriveImpliedPer100g, scaleToQuantity } from '@/lib/comidas/food-calculation'
 import { FoodSearchDialog } from '@/components/comidas/food-search-dialog'
+import { MacroProgress } from '@/components/comidas/macro-progress'
 
 export default function MacrosPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -221,44 +222,11 @@ export default function MacrosPage() {
     }))
   )
 
-  const remaining = calculateRemaining(
-    {
-      calories: goal.goalCalories,
-      proteinG: goal.macros.proteinG,
-      fatG: goal.macros.fatG,
-      carbsG: goal.macros.carbsG,
-    },
-    consumed
-  )
-
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="font-display text-xl">Macros</h1>
 
       {goal.warning && <p className="text-sm text-amber-600">{goal.warning}</p>}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Meta diaria</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          <p className="font-numeric text-2xl">{Math.round(goal.goalCalories)} kcal</p>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <p className="text-muted-foreground">Proteína</p>
-              <p className="font-numeric">{Math.round(goal.macros.proteinG)}g</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Grasa</p>
-              <p className="font-numeric">{Math.round(goal.macros.fatG)}g</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Carbohidratos</p>
-              <p className="font-numeric">{Math.round(goal.macros.carbsG)}g</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="flex items-center justify-between">
         <Button type="button" variant="outline" size="sm" onClick={handlePrevDay}>
@@ -272,34 +240,26 @@ export default function MacrosPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Consumido ese día</CardTitle>
+          <CardTitle className="text-base">{selectedDate === todayLocalDate() ? 'Hoy' : selectedDate}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2">
+        <CardContent>
           {entriesError ? (
-            <p className="text-sm text-destructive">No pudimos cargar los alimentos de este día.</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-1 text-sm">
-              <p>
-                Calorías: <span className="font-numeric">{Math.round(consumed.calories)}</span> /{' '}
-                <span className="font-numeric">{Math.round(goal.goalCalories)}</span> (restan{' '}
-                <span className="font-numeric">{Math.round(remaining.calories)}</span>)
-              </p>
-              <p>
-                Proteína: <span className="font-numeric">{Math.round(consumed.proteinG)}g</span> /{' '}
-                <span className="font-numeric">{Math.round(goal.macros.proteinG)}g</span> (restan{' '}
-                <span className="font-numeric">{Math.round(remaining.proteinG)}g</span>)
-              </p>
-              <p>
-                Grasa: <span className="font-numeric">{Math.round(consumed.fatG)}g</span> /{' '}
-                <span className="font-numeric">{Math.round(goal.macros.fatG)}g</span> (restan{' '}
-                <span className="font-numeric">{Math.round(remaining.fatG)}g</span>)
-              </p>
-              <p>
-                Carbohidratos: <span className="font-numeric">{Math.round(consumed.carbsG)}g</span> /{' '}
-                <span className="font-numeric">{Math.round(goal.macros.carbsG)}g</span> (restan{' '}
-                <span className="font-numeric">{Math.round(remaining.carbsG)}g</span>)
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-destructive">No pudimos cargar los alimentos de este día.</p>
+              <p className="text-sm text-muted-foreground">
+                Meta: <span className="font-numeric">{Math.round(goal.goalCalories)}</span> kcal
               </p>
             </div>
+          ) : (
+            <MacroProgress
+              consumed={consumed}
+              goal={{
+                calories: goal.goalCalories,
+                proteinG: goal.macros.proteinG,
+                fatG: goal.macros.fatG,
+                carbsG: goal.macros.carbsG,
+              }}
+            />
           )}
         </CardContent>
       </Card>
