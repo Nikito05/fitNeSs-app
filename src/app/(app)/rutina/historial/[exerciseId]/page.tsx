@@ -53,7 +53,7 @@ export default function HistorialEjercicioPage() {
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="font-display text-xl">Historial</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no registraste este ejercicio.</p>
       ) : (

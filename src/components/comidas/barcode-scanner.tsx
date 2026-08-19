@@ -49,7 +49,7 @@ export function BarcodeScanner({
   return (
     <div className="flex flex-col gap-4">
       {error ? (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       ) : (
         <video ref={videoRef} className="w-full rounded-md" muted playsInline />
       )}

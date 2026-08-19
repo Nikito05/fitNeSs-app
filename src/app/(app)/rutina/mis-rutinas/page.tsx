@@ -64,7 +64,7 @@ export default function MisRutinasPage() {
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="font-display text-xl">Mis rutinas</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-2">
         <Input
           placeholder="Nombre de la nueva rutina"

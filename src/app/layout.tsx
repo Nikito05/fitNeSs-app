@@ -3,6 +3,7 @@ import { Bebas_Neue, Roboto, Teko, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { FontSizeProvider } from "@/components/settings/font-size-provider";
+import { ThemeProvider } from "@/components/settings/theme-provider";
 
 const fontDisplay = Bebas_Neue({
   variable: "--font-display",
@@ -48,6 +49,21 @@ export const viewport: Viewport = {
   themeColor: "#111111",
 };
 
+// Duplica a propósito la lógica de resolveTheme/getStoredTheme de src/lib/theme.ts —
+// corre antes de que cualquier módulo de la app esté disponible. Ver spec:
+// docs/superpowers/specs/2026-08-19-selector-de-tema-design.md
+const themeInitScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('fitness-app-theme');
+    var theme = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
+    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var resolved = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+    if (resolved === 'dark') document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,11 +73,16 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${fontDisplay.variable} ${fontBody.variable} ${fontNumeric.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />
         <FontSizeProvider />
+        <ThemeProvider />
       </body>
     </html>
   );

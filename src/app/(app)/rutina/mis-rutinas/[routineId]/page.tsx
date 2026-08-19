@@ -152,7 +152,7 @@ export default function EditarRutinaPage() {
   if (!routine) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
@@ -162,7 +162,7 @@ export default function EditarRutinaPage() {
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <h1 className="font-display text-xl">{routine.name}</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-2">
         <Input
