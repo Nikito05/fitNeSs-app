@@ -1,6 +1,6 @@
 # fitNeSs-app
 
-PWA personal de fitness: rutina de gimnasio, progreso corporal, macros/calorías y control de sueño. Multi-usuario desde el diseño de base de datos, con Supabase (Postgres + Auth, RLS activado) y Next.js.
+PWA personal de fitness: rutina de gimnasio, progreso corporal y macros/calorías. Multi-usuario desde el diseño de base de datos, con Supabase (Postgres + Auth, RLS activado) y Next.js.
 
 ## Requisitos
 
@@ -39,7 +39,7 @@ PWA personal de fitness: rutina de gimnasio, progreso corporal, macros/calorías
 
 ## Navegación
 
-Bottom nav con 6 secciones: Inicio, Rutina, Progreso, Macros, Sueño, Perfil. Solo Perfil tiene funcionalidad real en esta fase — el resto son placeholders para el Módulo 1 (Rutina) y los módulos siguientes.
+Bottom nav con 5 secciones: Inicio, Rutina, Progreso, Macros, Perfil.
 
 ## Deployment
 

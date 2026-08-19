@@ -11,7 +11,6 @@
 1. Rutinas de gimnasio
 2. Progreso corporal (peso, medidas, fotos)
 3. Contador de macros/calorías
-4. Control de sueño
 
 **Alcance de uso**: hoy es de uso personal (solo yo), pero el modelo de datos se diseña multi-usuario desde el día 1 pensando en que a mediano plazo la usen familia y amigos, y a futuro pueda escalar a más usuarios.
 
@@ -44,7 +43,7 @@
 - **Fotos de progreso**: Supabase Storage, bucket privado (no público), acceso solo vía RLS/policies por usuario
 
 ### Modelo de datos multi-usuario
-Toda tabla de datos personales (rutinas, entrenamientos registrados, alimentos, sueño, medidas corporales, fotos) lleva `user_id` referenciando `auth.users`, con políticas RLS que solo permiten operar sobre las filas propias. Dejar pensado (sin implementar todavía) un futuro concepto de "compartir" datos entre usuarios, sin tomar decisiones de esquema que lo hagan imposible después.
+Toda tabla de datos personales (rutinas, entrenamientos registrados, alimentos, medidas corporales, fotos) lleva `user_id` referenciando `auth.users`, con políticas RLS que solo permiten operar sobre las filas propias. Dejar pensado (sin implementar todavía) un futuro concepto de "compartir" datos entre usuarios, sin tomar decisiones de esquema que lo hagan imposible después.
 
 ---
 
@@ -71,12 +70,9 @@ Registro de peso corporal en el tiempo (Feature 1, primera del módulo). Este m�
 **Módulo 3 — Macros y calorías**
 En base a peso (tomado del Módulo 2), altura, edad y objetivo del usuario (bajar, mantener, subir), se calcula una meta diaria de calorías, proteínas y demás macros, con posibilidad de definir un plazo objetivo. Registro de alimentos consumidos por día con cálculo de macros totales. Fuente de datos de alimentos: base pública **Open Food Facts** (API gratuita) + carga manual para comidas caseras/preparadas. Una mejora futura (no MVP) es estimar macros por IA a partir de una descripción de texto del alimento.
 
-**Módulo 4 — Sueño**
-Registro de horas de sueño (inicio/fin o duración) y calidad subjetiva por día, con promedio semanal para dar mayor precisión sobre el descanso y la recuperación del cuerpo.
+**Orden de implementación real, cuando llegue el momento**: Progreso corporal → Macros.
 
-**Orden de implementación real, cuando llegue el momento**: Progreso corporal → Macros → Sueño.
-
-**Futuro más lejano (no planificar todavía)**: dashboard general combinando los 4 módulos, invitación de familiares/amigos como usuarios reales, notificaciones, exportar datos.
+**Futuro más lejano (no planificar todavía)**: dashboard general combinando los módulos, invitación de familiares/amigos como usuarios reales, notificaciones, exportar datos.
 
 ---
 
