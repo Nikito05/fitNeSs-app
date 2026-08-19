@@ -63,7 +63,7 @@ export default function MisRutinasPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">Mis rutinas</h1>
+      <h1 className="font-display text-xl">Mis rutinas</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex gap-2">
         <Input
@@ -86,7 +86,7 @@ export default function MisRutinasPage() {
                 onClick={() => router.push(`/rutina/mis-rutinas/${routine.id}`)}
                 className="flex w-full items-center justify-between p-4 text-left"
               >
-                <span className="font-medium">{routine.name}</span>
+                <span className="font-display text-lg">{routine.name}</span>
                 <div className="flex items-center gap-2">
                   {routine.isActive && (
                     <span className="text-xs text-muted-foreground">Activa</span>
