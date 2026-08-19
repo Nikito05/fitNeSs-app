@@ -1,12 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Roboto, Teko, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { FontSizeProvider } from "@/components/settings/font-size-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fontDisplay = Bebas_Neue({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: "400",
+});
+
+const fontBody = Roboto({
+  variable: "--font-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
+
+const fontNumeric = Teko({
+  variable: "--font-numeric",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -43,7 +56,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fontDisplay.variable} ${fontBody.variable} ${fontNumeric.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
