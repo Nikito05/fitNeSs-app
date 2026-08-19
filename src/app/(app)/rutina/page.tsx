@@ -54,7 +54,7 @@ export default function RutinaPage() {
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{routine.name}</h1>
+        <h1 className="font-display text-xl">{routine.name}</h1>
         <Link href="/rutina/mis-rutinas" className="text-sm underline">
           Mis rutinas
         </Link>
@@ -68,7 +68,7 @@ export default function RutinaPage() {
               className="flex w-full items-center justify-between p-4 text-left"
             >
               <div>
-                <p className="font-medium">{day.name}</p>
+                <p className="font-display text-lg">{day.name}</p>
                 <p className="text-xs text-muted-foreground">Registrar entrenamiento</p>
               </div>
               <span className="text-sm text-muted-foreground">›</span>

@@ -292,7 +292,7 @@ export default function EntrenarPage() {
 
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4 text-center">
-        <h1 className="text-lg font-semibold">¡Entrenamiento completo!</h1>
+        <h1 className="font-display text-xl">¡Entrenamiento completo!</h1>
         <p className="text-sm text-muted-foreground">
           {completedCount} de {flatSets.length} series completadas en {dayDetail.name}.
         </p>
@@ -315,7 +315,8 @@ export default function EntrenarPage() {
 
       <DropdownMenu>
         <DropdownMenuTrigger className="self-center rounded-md border px-3 py-1.5 text-sm text-muted-foreground">
-          Serie {currentIndex + 1} de {flatSets.length}
+          Serie <span className="font-numeric">{currentIndex + 1}</span> de{' '}
+          <span className="font-numeric">{flatSets.length}</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center">
           {flatSets.map((flatSet, index) => {
@@ -353,7 +354,7 @@ export default function EntrenarPage() {
             <Button type="button" variant="outline" size="icon" onClick={() => adjustReps(-1)}>
               −
             </Button>
-            <span className="w-12 text-2xl font-semibold">{currentLog?.actualReps ?? 0}</span>
+            <span className="w-12 font-numeric text-3xl">{currentLog?.actualReps ?? 0}</span>
             <Button type="button" variant="outline" size="icon" onClick={() => adjustReps(1)}>
               +
             </Button>
@@ -366,7 +367,7 @@ export default function EntrenarPage() {
             <Button type="button" variant="outline" size="icon" onClick={() => adjustWeight(-2.5)}>
               −
             </Button>
-            <span className="w-16 text-2xl font-semibold">{currentLog?.actualWeight ?? 0}</span>
+            <span className="w-16 font-numeric text-3xl">{currentLog?.actualWeight ?? 0}</span>
             <Button type="button" variant="outline" size="icon" onClick={() => adjustWeight(2.5)}>
               +
             </Button>

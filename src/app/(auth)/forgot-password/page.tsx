@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
       <div className="flex min-h-dvh items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>Revisá tu email</CardTitle>
+            <CardTitle className="font-display! text-xl">Revisá tu email</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Recuperar contraseña</CardTitle>
+          <CardTitle className="font-display! text-xl">Recuperar contraseña</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>

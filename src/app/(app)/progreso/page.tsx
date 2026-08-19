@@ -87,7 +87,7 @@ export default function ProgresoPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">Progreso</h1>
+      <h1 className="font-display text-xl">Progreso</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Card>
@@ -96,10 +96,10 @@ export default function ProgresoPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {mostRecent && (
-            <p className="text-2xl font-semibold">
+            <p className="font-numeric text-2xl">
               {mostRecent.weightKg}kg
               {mostRecent.id !== todayLog?.id && (
-                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                <span className="ml-2 font-body text-sm font-normal text-muted-foreground">
                   ({mostRecent.logDate})
                 </span>
               )}
@@ -142,7 +142,7 @@ export default function ProgresoPage() {
             {[...history].reverse().map((log) => (
               <div key={log.id} className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{log.logDate}</span>
-                <span>{log.weightKg}kg</span>
+                <span className="font-numeric">{log.weightKg}kg</span>
               </div>
             ))}
           </div>

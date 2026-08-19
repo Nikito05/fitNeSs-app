@@ -161,7 +161,7 @@ export default function EditarRutinaPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">{routine.name}</h1>
+      <h1 className="font-display text-xl">{routine.name}</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2">
@@ -183,7 +183,7 @@ export default function EditarRutinaPage() {
               onClick={() => handleOpenDay(day.id)}
               className="flex w-full items-center justify-between p-4 text-left"
             >
-              <span className="font-medium">{day.name}</span>
+              <span className="font-display text-lg">{day.name}</span>
               <span className="text-sm text-muted-foreground">›</span>
             </button>
           </Card>
@@ -196,7 +196,7 @@ export default function EditarRutinaPage() {
       <Sheet open={openDayId !== null} onOpenChange={handleSheetOpenChange}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{openDay?.name}</SheetTitle>
+            <SheetTitle className="font-display! text-lg">{openDay?.name}</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-3 px-4 pb-4">
             <div className="flex items-center justify-between">

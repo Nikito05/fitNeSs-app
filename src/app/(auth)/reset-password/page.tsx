@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
     <div className="flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Elegir nueva contraseña</CardTitle>
+          <CardTitle className="font-display! text-xl">Elegir nueva contraseña</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
