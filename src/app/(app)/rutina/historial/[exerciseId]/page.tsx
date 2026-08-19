@@ -52,7 +52,7 @@ export default function HistorialEjercicioPage() {
 
   return (
     <div className="flex min-h-dvh flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold">Historial</h1>
+      <h1 className="font-display text-xl">Historial</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no registraste este ejercicio.</p>
@@ -91,8 +91,14 @@ export default function HistorialEjercicioPage() {
                       <CardContent className="flex flex-col gap-1">
                         {session.sets.map((set) => (
                           <p key={set.setNumber} className="text-sm">
-                            Serie {set.setNumber}: {set.actualReps} reps
-                            {set.actualWeight != null ? ` @ ${set.actualWeight}kg` : ''}
+                            Serie <span className="font-numeric">{set.setNumber}</span>:{' '}
+                            <span className="font-numeric">{set.actualReps}</span> reps
+                            {set.actualWeight != null && (
+                              <>
+                                {' '}
+                                @ <span className="font-numeric">{set.actualWeight}kg</span>
+                              </>
+                            )}
                           </p>
                         ))}
                       </CardContent>
