@@ -2,21 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { listWeightHistory } from '@/lib/progreso/weight-api'
 import { todayLocalDate, shiftLocalDate } from '@/lib/date'
-import {
-  calculateDailyGoal,
-  type DailyGoal,
-  type BiologicalSex,
-  type ActivityLevel,
-  type WeightGoal,
-} from '@/lib/macros/goal-calculation'
-import type { TrainingGoal } from '@/lib/rutina/progression-suggestion'
+import { type DailyGoal } from '@/lib/macros/goal-calculation'
+import { loadDailyGoal } from '@/lib/macros/goal-api'
 import {
   listFoodLogForDate,
   updateFoodLogEntryQuantity,
@@ -46,63 +38,15 @@ export default function MacrosPage() {
     async function init() {
       setIsLoading(true)
       setLoadError(false)
-      try {
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!user) {
-          setIsLoading(false)
-          return
-        }
-
-        const [{ data: profile, error: profileError }, weightHistory] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select(
-              'height_cm, biological_sex, birth_date, activity_level, weight_goal, target_weight_kg, target_date, training_goal'
-            )
-            .eq('id', user.id)
-            .single(),
-          listWeightHistory(),
-        ])
-
-        if (profileError) throw profileError
-
-        const missing: string[] = []
-        if (!profile?.height_cm) missing.push('altura')
-        if (!profile?.biological_sex) missing.push('sexo biológico')
-        if (!profile?.birth_date) missing.push('fecha de nacimiento')
-        if (!profile?.activity_level) missing.push('nivel de actividad')
-        const latestWeight = weightHistory[weightHistory.length - 1] ?? null
-        if (!latestWeight) missing.push('un registro de peso corporal')
-
-        if (missing.length > 0) {
-          setMissingFields(missing)
-          setIsLoading(false)
-          return
-        }
-
-        const dailyGoal = calculateDailyGoal({
-          sex: profile!.biological_sex as BiologicalSex,
-          weightKg: latestWeight!.weightKg,
-          heightCm: profile!.height_cm as number,
-          birthDate: profile!.birth_date as string,
-          activityLevel: profile!.activity_level as ActivityLevel,
-          weightGoal: (profile!.weight_goal as WeightGoal) ?? 'mantener',
-          targetWeightKg: profile!.target_weight_kg,
-          targetDate: profile!.target_date,
-          trainingGoal: (profile!.training_goal as TrainingGoal) ?? 'general',
-          today: todayLocalDate(),
-        })
-
-        setGoal(dailyGoal)
-      } catch {
+      const result = await loadDailyGoal()
+      if (result.status === 'ok') {
+        setGoal(result.goal)
+      } else if (result.status === 'missing_fields') {
+        setMissingFields(result.missingFields)
+      } else {
         setLoadError(true)
-      } finally {
-        setIsLoading(false)
       }
+      setIsLoading(false)
     }
 
     init()
