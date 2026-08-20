@@ -68,7 +68,7 @@ En el brainstorming de este módulo, explorá conmigo (una pregunta a la vez): c
 Registro de peso corporal en el tiempo (Feature 1, primera del módulo). Este módulo alimenta al Módulo 3: el cálculo de macros necesita el peso actual del usuario, que se obtiene del último registro acá en vez de volver a preguntarlo cada vez. Medidas corporales (cintura, brazo, etc.) sigue en evaluación, no descartada — se decide en su propio brainstorming si/cuándo se construye. **Fotos de progreso se sacó del alcance del módulo** (ver "Decisiones registradas").
 
 **Módulo 3 — Macros y calorías**
-En base a peso (tomado del Módulo 2), altura, edad y objetivo del usuario (bajar, mantener, subir), se calcula una meta diaria de calorías, proteínas y demás macros, con posibilidad de definir un plazo objetivo. Registro de alimentos consumidos por día con cálculo de macros totales. Fuente de datos de alimentos: base pública **Open Food Facts** (API gratuita) + carga manual para comidas caseras/preparadas. Una mejora futura (no MVP) es estimar macros por IA a partir de una descripción de texto del alimento.
+En base a peso (tomado del Módulo 2), altura, edad y objetivo del usuario (bajar, mantener, subir), se calcula una meta diaria de calorías, proteínas y demás macros, con posibilidad de definir un plazo objetivo. Registro de alimentos consumidos por día con cálculo de macros totales. Fuente de datos de alimentos: base pública **Open Food Facts** (API gratuita) + carga manual para comidas caseras/preparadas.
 
 **Orden de implementación real, cuando llegue el momento**: Progreso corporal → Macros.
 
