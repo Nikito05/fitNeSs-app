@@ -7,6 +7,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart'
+import { cn } from '@/lib/utils'
 
 export type WeightPoint = {
   date: string
@@ -20,20 +21,26 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function WeightProgressionChart({ data }: { data: WeightPoint[] }) {
+export function WeightProgressionChart({
+  data,
+  compact = false,
+}: {
+  data: WeightPoint[]
+  compact?: boolean
+}) {
   return (
-    <ChartContainer config={chartConfig}>
-      <LineChart data={data}>
-        <CartesianGrid vertical={false} />
-        <XAxis dataKey="date" tickLine={false} axisLine={false} />
-        <YAxis tickLine={false} axisLine={false} />
-        <ChartTooltip content={<ChartTooltipContent />} />
+    <ChartContainer config={chartConfig} className={cn(compact && 'aspect-auto h-11')}>
+      <LineChart data={data} margin={compact ? { top: 4, right: 4, bottom: 4, left: 4 } : undefined}>
+        {!compact && <CartesianGrid vertical={false} />}
+        {!compact && <XAxis dataKey="date" tickLine={false} axisLine={false} />}
+        {!compact && <YAxis tickLine={false} axisLine={false} />}
+        {!compact && <ChartTooltip content={<ChartTooltipContent />} />}
         <Line
           dataKey="weightKg"
           type="monotone"
           stroke="var(--color-weightKg)"
           strokeWidth={2}
-          dot={{ r: 3 }}
+          dot={compact ? false : { r: 3 }}
         />
       </LineChart>
     </ChartContainer>
