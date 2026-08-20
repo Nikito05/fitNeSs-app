@@ -149,6 +149,8 @@ export default function MacrosPage() {
     )
   }
 
+  // En la práctica inalcanzable: loadDailyGoal() nunca deja goal===null cuando su status
+  // es 'ok' (ver src/lib/macros/goal-api.ts). Se mantiene por el narrowing de TypeScript.
   if (!goal) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
